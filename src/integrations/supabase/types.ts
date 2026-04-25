@@ -16,34 +16,43 @@ export type Database = {
     Tables: {
       generated_offers: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           context_used: Json
           created_at: string
           description: string | null
           discount: number
           id: string
           merchant_id: string
+          qr_code: string | null
           status: Database["public"]["Enums"]["offer_status"]
           title: string
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           context_used?: Json
           created_at?: string
           description?: string | null
           discount?: number
           id?: string
           merchant_id: string
+          qr_code?: string | null
           status?: Database["public"]["Enums"]["offer_status"]
           title: string
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           context_used?: Json
           created_at?: string
           description?: string | null
           discount?: number
           id?: string
           merchant_id?: string
+          qr_code?: string | null
           status?: Database["public"]["Enums"]["offer_status"]
           title?: string
           updated_at?: string
@@ -189,7 +198,7 @@ export type Database = {
     }
     Enums: {
       app_role: "client" | "pro"
-      offer_status: "draft" | "active" | "paused" | "expired"
+      offer_status: "draft" | "active" | "paused" | "expired" | "confirmed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -318,7 +327,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["client", "pro"],
-      offer_status: ["draft", "active", "paused", "expired"],
+      offer_status: ["draft", "active", "paused", "expired", "confirmed"],
     },
   },
 } as const

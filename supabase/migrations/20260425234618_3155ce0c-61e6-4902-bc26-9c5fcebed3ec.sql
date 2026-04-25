@@ -1,0 +1,1 @@
+ALTER TYPE public.offer_status ADD VALUE IF NOT EXISTS 'confirmed';
