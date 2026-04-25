@@ -206,6 +206,25 @@ export function useMerchantData() {
     [refresh],
   );
 
+  const generateAIOffer = useCallback(
+    async (opts?: { lat?: number; lng?: number; status?: "draft" | "active" }) => {
+      if (!merchant) throw new Error("Aucun commerce");
+      const { data, error } = await supabase.functions.invoke("generate-offer", {
+        body: {
+          merchant_id: merchant.id,
+          lat: opts?.lat,
+          lng: opts?.lng,
+          status: opts?.status ?? "draft",
+        },
+      });
+      if (error) throw new Error(error.message ?? "Erreur génération IA");
+      if (!data?.success) throw new Error(data?.error ?? "Erreur génération IA");
+      await refresh();
+      return data as { offer: GeneratedOffer; rationale: string };
+    },
+    [merchant, refresh],
+  );
+
   return {
     merchant,
     offers,
@@ -218,5 +237,6 @@ export function useMerchantData() {
     createOffer,
     updateOfferStatus,
     deleteOffer,
+    generateAIOffer,
   };
 }

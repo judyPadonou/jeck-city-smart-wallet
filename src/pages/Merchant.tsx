@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMerchantData, type OfferStatus } from "@/hooks/useMerchantData";
+import { Wand2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const goals = [
@@ -24,8 +25,35 @@ const Merchant = () => {
   const navigate = useNavigate();
   const {
     merchant, offers, stats, loading,
-    createMerchant, updateRules, createOffer, updateOfferStatus, deleteOffer,
+    createMerchant, updateRules, createOffer, updateOfferStatus, deleteOffer, generateAIOffer,
   } = useMerchantData();
+  const [generatingAI, setGeneratingAI] = useState(false);
+
+  const handleGenerateAI = async () => {
+    setGeneratingAI(true);
+    try {
+      const getCoords = () =>
+        new Promise<{ lat?: number; lng?: number }>((resolve) => {
+          if (merchant?.lat && merchant?.lng) return resolve({ lat: merchant.lat, lng: merchant.lng });
+          if (!navigator.geolocation) return resolve({});
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve({}),
+            { timeout: 5000 },
+          );
+        });
+      const coords = await getCoords();
+      const res = await generateAIOffer({ ...coords, status: "draft" });
+      toast({
+        title: "Offre IA générée ✨",
+        description: res.rationale ?? "Brouillon ajouté à tes offres.",
+      });
+    } catch (e) {
+      toast({ title: "Erreur IA", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
 
   const initialRules = (merchant?.rules ?? {}) as { discount?: number; goals?: string[]; auto?: boolean };
   const [discount, setDiscount] = useState<number>(initialRules.discount ?? 20);
@@ -249,7 +277,17 @@ const Merchant = () => {
 
             {/* Offers manager */}
             <Card className="mt-4">
-              <CardHeader title="Mes offres" subtitle="Créez et gérez vos offres en temps réel" />
+              <div className="flex items-start justify-between gap-3">
+                <CardHeader title="Mes offres" subtitle="Créez et gérez vos offres en temps réel" />
+                <button
+                  onClick={handleGenerateAI}
+                  disabled={generatingAI}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-primary px-4 py-2 text-xs font-extrabold text-primary-foreground shadow-elegant disabled:opacity-60"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  {generatingAI ? "Génération…" : "Générer avec l'IA"}
+                </button>
+              </div>
 
               <form onSubmit={handleCreateOffer} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]">
                 <input
