@@ -1,14 +1,21 @@
-import { Link } from "react-router-dom";
-import { Settings, ChevronRight, Bell, Shield, Heart, LogOut, Store, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Settings, ChevronRight, Bell, Shield, Heart, LogOut, Sparkles } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { LanguageSelector } from "@/components/jeck/LanguageSelector";
 import { getWallet } from "@/lib/jeck-data";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
   const items = getWallet();
   const totalSaved = items.reduce((s, i) => s + (i.offer.originalPrice - i.offer.price), 0);
   const { t } = useI18n();
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <MobileShell>
