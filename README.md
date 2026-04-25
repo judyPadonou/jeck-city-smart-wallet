@@ -53,9 +53,6 @@ Aggregates real-time signals to detect **opportunity moments**:
 - Local events
 - Transaction density (Payone simulation)
 
-**Example context:**
-
-
 ---
 
 ### 2. Generative Offer Engine
@@ -209,12 +206,6 @@ System detects:
 
 ---
 
-## 🏁 End-to-End Flow
-
-
-
----
-
 ## 💡 What Makes This Project Strong
 
 - ✅ Real-time context usage  
@@ -237,12 +228,12 @@ System detects:
 
 ## 🤝 Contributors
 
-Hackathon Team — AI Engineers, Product Designers, Data Scientists  
+JECK AI team
 
 ---
 
 ## 📬 Contact
 
-Project built for:  
-**DSV-Gruppe — Deutscher Sparkassenverlag**  
-In collaboration with MIT Clubs
+Project built for Hack nation:  
+**Projec for DSV-Gruppe — Deutscher Sparkassenverlag**  
+In collaboration with MIT Clubs 
