@@ -1,6 +1,3 @@
-# Welcome to your Lovable project
-
-TODO: Document your project here
 # 🏙️ City Wallet — Hyperpersonalized Generative Offers
 
 > AI-powered city wallet that generates real-time, context-aware offers for local commerce.
