@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      generated_offers: {
+        Row: {
+          context_used: Json
+          created_at: string
+          description: string | null
+          discount: number
+          id: string
+          merchant_id: string
+          status: Database["public"]["Enums"]["offer_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          context_used?: Json
+          created_at?: string
+          description?: string | null
+          discount?: number
+          id?: string
+          merchant_id: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          context_used?: Json
+          created_at?: string
+          description?: string | null
+          discount?: number
+          id?: string
+          merchant_id?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_offers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchants: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          owner_id: string
+          rules: Json
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          owner_id: string
+          rules?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          owner_id?: string
+          rules?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_category: string | null
@@ -40,6 +120,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          merchant_id: string
+          timestamp: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          merchant_id: string
+          timestamp?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -77,6 +189,7 @@ export type Database = {
     }
     Enums: {
       app_role: "client" | "pro"
+      offer_status: "draft" | "active" | "paused" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -205,6 +318,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["client", "pro"],
+      offer_status: ["draft", "active", "paused", "expired"],
     },
   },
 } as const
