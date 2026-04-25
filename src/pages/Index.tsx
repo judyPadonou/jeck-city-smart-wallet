@@ -7,9 +7,11 @@ import { ContextBadges } from "@/components/jeck/ContextBadges";
 import { MagicOfferCard } from "@/components/jeck/MagicOfferCard";
 import { OfferCard } from "@/components/jeck/OfferCard";
 import { detectContext, mockOffers, pickMagicOffer, CityContext } from "@/lib/jeck-data";
+import { useI18n } from "@/lib/i18n";
 
 const Index = () => {
   const [context, setContext] = useState<CityContext>(() => detectContext());
+  const { t } = useI18n();
 
   // Simulate context refresh — change every 8s for the demo of "generative UI".
   useEffect(() => {
@@ -34,7 +36,7 @@ const Index = () => {
       {/* Top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between bg-background/80 px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)] backdrop-blur-xl">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Bonjour Mia 👋</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("home.greeting")}</p>
           <h1 className="font-display text-lg font-extrabold tracking-tight">
             <span className="text-primary">JECK</span> City-Wallet
           </h1>
@@ -45,7 +47,7 @@ const Index = () => {
             className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-soft transition-colors hover:bg-secondary"
           >
             <Store className="h-3.5 w-3.5" />
-            Pro
+            {t("home.pro")}
           </Link>
           <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-card text-foreground shadow-soft">
             <Bell className="h-4 w-4" />
@@ -59,7 +61,7 @@ const Index = () => {
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
-            placeholder="Cherche un café, un resto, une offre…"
+            placeholder={t("home.searchPlaceholder")}
             className="h-12 w-full rounded-2xl border border-border bg-card pl-11 pr-4 text-sm font-medium placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
           />
         </div>
@@ -80,10 +82,10 @@ const Index = () => {
           className="mt-7 flex items-end justify-between"
         >
           <div>
-            <h2 className="font-display text-lg font-extrabold tracking-tight">Près de vous</h2>
-            <p className="text-xs text-muted-foreground">Sélectionnées par l'IA · {otherOffers.length} offres</p>
+            <h2 className="font-display text-lg font-extrabold tracking-tight">{t("home.nearby")}</h2>
+            <p className="text-xs text-muted-foreground">{t("home.aiSelected")} · {otherOffers.length} {t("home.offers")}</p>
           </div>
-          <button className="text-xs font-semibold text-primary hover:underline">Voir tout</button>
+          <button className="text-xs font-semibold text-primary hover:underline">{t("common.seeAll")}</button>
         </motion.div>
 
         {/* Feed */}
@@ -94,7 +96,7 @@ const Index = () => {
         </div>
 
         <p className="mt-8 text-center text-[11px] text-muted-foreground">
-          ✨ Générées en temps réel selon votre contexte
+          {t("home.generated")}
         </p>
       </main>
     </MobileShell>

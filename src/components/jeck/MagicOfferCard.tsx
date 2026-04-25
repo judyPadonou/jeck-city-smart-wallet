@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CityContext, Offer } from "@/lib/jeck-data";
 import { moodThemes } from "@/lib/mood-theme";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   offer: Offer;
@@ -11,6 +12,7 @@ interface Props {
 
 export function MagicOfferCard({ offer, context }: Props) {
   const theme = moodThemes[context.mood];
+  const { t } = useI18n();
 
   return (
     <AnimatePresence mode="wait">
