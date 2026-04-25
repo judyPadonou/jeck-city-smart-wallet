@@ -36,7 +36,7 @@ const OfferDetail = () => {
   };
 
   return (
-    <MobileShell>
+    <MobileShell hideTabs>
       {/* Hero */}
       <motion.section
         initial={{ opacity: 0 }}
@@ -56,7 +56,7 @@ const OfferDetail = () => {
           </button>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
             <Sparkles className="h-3 w-3" />
-            Offre IA
+            {t("offer.aiTag")}
           </span>
         </div>
 
@@ -84,16 +84,16 @@ const OfferDetail = () => {
         </div>
       </motion.section>
 
-      <main className="flex-1 px-5 py-6">
+      <main className="flex-1 px-5 py-6 pb-40">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="grid grid-cols-3 gap-2"
         >
-          <Stat icon={<MapPin className="h-4 w-4" />} label="Distance" value={`${offer.distance}m`} />
-          <Stat icon={<Clock className="h-4 w-4" />} label="Valable" value={offer.validUntil.split(" ").pop() ?? offer.validUntil} />
-          <Stat icon={<Tag className="h-4 w-4" />} label="Type" value={offer.category} />
+          <Stat icon={<MapPin className="h-4 w-4" />} label={t("offer.distance")} value={`${offer.distance}m`} />
+          <Stat icon={<Clock className="h-4 w-4" />} label={t("offer.valid")} value={offer.validUntil.split(" ").pop() ?? offer.validUntil} />
+          <Stat icon={<Tag className="h-4 w-4" />} label={t("offer.type")} value={offer.category} />
         </motion.div>
 
         <motion.div
@@ -103,7 +103,7 @@ const OfferDetail = () => {
           className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-soft"
         >
           <h2 className="font-display text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
-            Pourquoi cette offre ?
+            {t("offer.why")}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-foreground">{offer.description}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
@@ -125,37 +125,39 @@ const OfferDetail = () => {
           className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-soft"
         >
           <h2 className="font-display text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
-            Comment ça marche
+            {t("offer.how")}
           </h2>
           <ol className="mt-3 space-y-2.5 text-sm">
-            <Step n={1}>Acceptez l'offre — un QR code est généré.</Step>
-            <Step n={2}>Présentez-le au comptoir du marchand.</Step>
-            <Step n={3}>Profitez ! Le paiement est sécurisé via Payone.</Step>
+            <Step n={1}>{t("offer.step1")}</Step>
+            <Step n={2}>{t("offer.step2")}</Step>
+            <Step n={3}>{t("offer.step3")}</Step>
           </ol>
         </motion.div>
       </main>
 
-      {/* Sticky CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/85 px-5 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 backdrop-blur-xl">
+      {/* Sticky CTA — high z-index, strong contrast, safe-area aware */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-4 shadow-[0_-12px_30px_-12px_hsl(var(--foreground)/0.18)] backdrop-blur-xl">
         <div className="mx-auto max-w-md">
           <motion.button
             onClick={handleAccept}
             disabled={accepted}
             whileTap={{ scale: 0.97 }}
-            className={`relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl font-display text-base font-extrabold shadow-accent transition-colors ${
+            aria-label={accepted ? t("offer.added") : t("offer.acceptCta")}
+            className={`relative flex h-16 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl font-display text-lg font-extrabold tracking-tight ring-2 ring-offset-2 ring-offset-background transition-all ${
               accepted
-                ? "bg-success text-white"
-                : "bg-gradient-accent text-accent-foreground hover:brightness-105"
+                ? "bg-success text-white ring-success/40 shadow-elegant"
+                : "bg-gradient-accent text-accent-foreground ring-accent/40 shadow-accent hover:brightness-105 active:brightness-95"
             }`}
           >
             {accepted ? (
               <>
-                <Check className="h-5 w-5" />
-                Ajouté au portefeuille
+                <Check className="h-6 w-6" />
+                {t("offer.added")}
               </>
             ) : (
               <>
-                Accepter l'offre · -{offer.discount}%
+                <span>{t("offer.acceptCta")} · -{offer.discount}%</span>
+                <ArrowRight className="h-5 w-5" />
               </>
             )}
           </motion.button>
