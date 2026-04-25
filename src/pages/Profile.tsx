@@ -1,18 +1,21 @@
 import { Link } from "react-router-dom";
 import { Settings, ChevronRight, Bell, Shield, Heart, LogOut, Store, Sparkles } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
+import { LanguageSelector } from "@/components/jeck/LanguageSelector";
 import { getWallet } from "@/lib/jeck-data";
+import { useI18n } from "@/lib/i18n";
 
 const Profile = () => {
   const items = getWallet();
   const totalSaved = items.reduce((s, i) => s + (i.offer.originalPrice - i.offer.price), 0);
+  const { t } = useI18n();
 
   return (
     <MobileShell>
       <header className="flex items-center justify-between px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)]">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Compte</p>
-          <h1 className="font-display text-2xl font-extrabold tracking-tight">Profil</h1>
+          <p className="text-xs font-medium text-muted-foreground">{t("profile.subtitle")}</p>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("profile.title")}</h1>
         </div>
         <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-soft">
           <Settings className="h-4 w-4" />
@@ -29,16 +32,16 @@ const Profile = () => {
             </div>
             <div>
               <h2 className="font-display text-xl font-extrabold">Mia Laurent</h2>
-              <p className="text-xs text-white/80">Membre JECK depuis 2024</p>
+              <p className="text-xs text-white/80">{t("profile.member")}</p>
             </div>
           </div>
           <div className="relative mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-white/15 p-3 backdrop-blur-md">
-              <p className="text-[10px] uppercase tracking-wider text-white/70">Économisé</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/70">{t("profile.saved")}</p>
               <p className="font-display text-2xl font-extrabold">{totalSaved.toFixed(2)}€</p>
             </div>
             <div className="rounded-2xl bg-white/15 p-3 backdrop-blur-md">
-              <p className="text-[10px] uppercase tracking-wider text-white/70">Offres utilisées</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/70">{t("profile.usedOffers")}</p>
               <p className="font-display text-2xl font-extrabold">{items.length}</p>
             </div>
           </div>
@@ -53,26 +56,32 @@ const Profile = () => {
             <Store className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <p className="font-display text-sm font-extrabold text-foreground">Vous êtes commerçant ?</p>
-            <p className="text-xs text-muted-foreground">Accéder au dashboard JECK Pro</p>
+            <p className="font-display text-sm font-extrabold text-foreground">{t("profile.merchantQ")}</p>
+            <p className="text-xs text-muted-foreground">{t("profile.merchantDesc")}</p>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
 
         {/* Settings */}
         <h3 className="mt-6 px-1 font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-          Préférences
+          {t("profile.preferences")}
         </h3>
-        <div className="mt-2 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-          <Row icon={<Sparkles className="h-4 w-4" />} label="Personnalisation IA" hint="Activée" />
-          <Row icon={<Bell className="h-4 w-4" />} label="Notifications" hint="Géolocalisées" />
-          <Row icon={<Heart className="h-4 w-4" />} label="Catégories favorites" hint="Café, Resto" />
-          <Row icon={<Shield className="h-4 w-4" />} label="Confidentialité" />
+
+        {/* Language selector */}
+        <div className="mt-2">
+          <LanguageSelector />
+        </div>
+
+        <div className="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          <Row icon={<Sparkles className="h-4 w-4" />} label={t("profile.aiPersonalization")} hint={t("profile.activated")} />
+          <Row icon={<Bell className="h-4 w-4" />} label={t("profile.notifications")} hint={t("profile.geoNotif")} />
+          <Row icon={<Heart className="h-4 w-4" />} label={t("profile.favorites")} hint={t("profile.favoritesValue")} />
+          <Row icon={<Shield className="h-4 w-4" />} label={t("profile.privacy")} />
         </div>
 
         <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-sm font-bold text-destructive shadow-soft">
           <LogOut className="h-4 w-4" />
-          Se déconnecter
+          {t("profile.logout")}
         </button>
       </main>
     </MobileShell>

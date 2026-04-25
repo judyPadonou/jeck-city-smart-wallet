@@ -6,10 +6,12 @@ import { Wallet as WalletIcon, Sparkles } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { getWallet, WalletItem } from "@/lib/jeck-data";
 import { moodThemes } from "@/lib/mood-theme";
+import { useI18n } from "@/lib/i18n";
 
 const Wallet = () => {
   const [items, setItems] = useState<WalletItem[]>([]);
   const [active, setActive] = useState<WalletItem | null>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     const w = getWallet();
@@ -20,8 +22,8 @@ const Wallet = () => {
   return (
     <MobileShell>
       <header className="px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)]">
-        <p className="text-xs font-medium text-muted-foreground">Votre coffre</p>
-        <h1 className="font-display text-2xl font-extrabold tracking-tight">Mon Portefeuille</h1>
+        <p className="text-xs font-medium text-muted-foreground">{t("wallet.subtitle")}</p>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("wallet.title")}</h1>
       </header>
 
       <main className="flex-1 px-5">
@@ -34,7 +36,7 @@ const Wallet = () => {
 
             {/* History */}
             <h2 className="mt-7 font-display text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
-              Historique ({items.length})
+              {t("wallet.history")} ({items.length})
             </h2>
             <div className="mt-3 space-y-2">
               {items.map((it) => (
@@ -59,7 +61,7 @@ const Wallet = () => {
                     <p className="truncate text-sm font-bold">{it.offer.title}</p>
                   </div>
                   <span className="rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-bold text-success">
-                    Active
+                    {t("wallet.active")}
                   </span>
                 </button>
               ))}
@@ -73,6 +75,7 @@ const Wallet = () => {
 
 function QrCard({ item }: { item: WalletItem }) {
   const theme = moodThemes[item.offer.mood];
+  const { t } = useI18n();
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.96 }}
@@ -111,14 +114,14 @@ function QrCard({ item }: { item: WalletItem }) {
 
       <div className="relative mt-5 flex items-center justify-between text-white">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-white/70">Économie</p>
+          <p className="text-[10px] uppercase tracking-wider text-white/70">{t("wallet.savings")}</p>
           <p className="font-display text-lg font-extrabold">
             {(item.offer.originalPrice - item.offer.price).toFixed(2)}€
           </p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-bold ${theme.badge}`}>-{item.offer.discount}%</span>
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wider text-white/70">Valable</p>
+          <p className="text-[10px] uppercase tracking-wider text-white/70">{t("common.validUntil")}</p>
           <p className="font-display text-lg font-extrabold">{item.offer.validUntil}</p>
         </div>
       </div>
@@ -127,6 +130,7 @@ function QrCard({ item }: { item: WalletItem }) {
 }
 
 function EmptyState() {
+  const { t } = useI18n();
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -136,16 +140,16 @@ function EmptyState() {
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft text-accent">
         <WalletIcon className="h-7 w-7" />
       </div>
-      <h2 className="mt-4 font-display text-lg font-extrabold">Votre portefeuille est vide</h2>
+      <h2 className="mt-4 font-display text-lg font-extrabold">{t("wallet.empty.title")}</h2>
       <p className="mx-auto mt-1 max-w-[260px] text-sm text-muted-foreground">
-        Acceptez une offre magique pour la voir apparaître ici avec son QR code.
+        {t("wallet.empty.desc")}
       </p>
       <Link
         to="/"
         className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-gradient-accent px-5 py-2.5 text-sm font-bold text-white shadow-accent"
       >
         <Sparkles className="h-4 w-4" />
-        Découvrir des offres
+        {t("wallet.empty.cta")}
       </Link>
     </motion.div>
   );

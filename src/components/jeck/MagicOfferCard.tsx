@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CityContext, Offer } from "@/lib/jeck-data";
 import { moodThemes } from "@/lib/mood-theme";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   offer: Offer;
@@ -11,6 +12,7 @@ interface Props {
 
 export function MagicOfferCard({ offer, context }: Props) {
   const theme = moodThemes[context.mood];
+  const { t } = useI18n();
 
   return (
     <AnimatePresence mode="wait">
@@ -31,7 +33,7 @@ export function MagicOfferCard({ offer, context }: Props) {
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
               <Sparkles className="h-3 w-3" />
-              Offre magique
+              {t("magic.tag")}
             </span>
             <span className="text-2xl">{theme.emoji}</span>
           </div>
@@ -62,13 +64,13 @@ export function MagicOfferCard({ offer, context }: Props) {
                   {offer.originalPrice.toFixed(2)}€
                 </span>
               </div>
-              <p className="mt-1 text-xs text-white/80">Valable {offer.validUntil}</p>
+              <p className="mt-1 text-xs text-white/80">{t("common.validUntil")} {offer.validUntil}</p>
             </div>
             <Link
               to={`/offer/${offer.id}`}
               className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-primary shadow-lg transition-transform hover:scale-105 active:scale-95"
             >
-              Voir
+              {t("common.see")}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
