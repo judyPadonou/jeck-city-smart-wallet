@@ -14,7 +14,7 @@ Instead of static coupons, the system generates **hyper-personalized offers** ba
 - ⏰ Time  
 - 📊 Local demand (transaction density)
 
-👉 Offers **do not exist beforehand** — they are created **on demand**, for a specific user, at a specific moment.
+👉 Offers **do not exist beforehand** they are created **on demand**, for a specific user, at a specific moment.
 
 ---
 
