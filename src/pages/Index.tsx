@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Bell, Search, Store } from "lucide-react";
+
+import { Bell, Search } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { ContextBadges } from "@/components/jeck/ContextBadges";
 import { MagicOfferCard } from "@/components/jeck/MagicOfferCard";
@@ -42,13 +42,6 @@ const Index = () => {
           </h1>
         </div>
         <div className="flex items-center gap-1.5">
-          <Link
-            to="/merchant"
-            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-soft transition-colors hover:bg-secondary"
-          >
-            <Store className="h-3.5 w-3.5" />
-            {t("home.pro")}
-          </Link>
           <button className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-card text-foreground shadow-soft">
             <Bell className="h-4 w-4" />
           </button>

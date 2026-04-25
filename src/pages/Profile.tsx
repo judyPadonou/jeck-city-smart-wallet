@@ -1,14 +1,21 @@
-import { Link } from "react-router-dom";
-import { Settings, ChevronRight, Bell, Shield, Heart, LogOut, Store, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Settings, ChevronRight, Bell, Shield, Heart, LogOut, Sparkles } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { LanguageSelector } from "@/components/jeck/LanguageSelector";
 import { getWallet } from "@/lib/jeck-data";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
   const items = getWallet();
   const totalSaved = items.reduce((s, i) => s + (i.offer.originalPrice - i.offer.price), 0);
   const { t } = useI18n();
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <MobileShell>
@@ -47,20 +54,10 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Promo merchant */}
-        <Link
-          to="/merchant"
-          className="mt-5 flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent-soft p-4 transition-transform hover:-translate-y-0.5"
-        >
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-accent text-white">
-            <Store className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <p className="font-display text-sm font-extrabold text-foreground">{t("profile.merchantQ")}</p>
-            <p className="text-xs text-muted-foreground">{t("profile.merchantDesc")}</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
+        {/* Email account info */}
+        {user?.email && (
+          <p className="mt-4 px-1 text-xs text-muted-foreground">{user.email}</p>
+        )}
 
         {/* Settings */}
         <h3 className="mt-6 px-1 font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
@@ -79,7 +76,7 @@ const Profile = () => {
           <Row icon={<Shield className="h-4 w-4" />} label={t("profile.privacy")} />
         </div>
 
-        <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-sm font-bold text-destructive shadow-soft">
+        <button onClick={handleSignOut} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-sm font-bold text-destructive shadow-soft">
           <LogOut className="h-4 w-4" />
           {t("profile.logout")}
         </button>

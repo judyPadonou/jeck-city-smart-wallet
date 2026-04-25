@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
 import {
-  ArrowLeft, Sparkles, Target, TrendingUp, ShoppingBag, Clock, Eye, Check, Zap,
+  LogOut, Sparkles, Target, TrendingUp, ShoppingBag, Clock, Eye, Check, Zap,
 } from "lucide-react";
 import { getMerchantStats } from "@/lib/jeck-data";
+import { useAuth } from "@/hooks/useAuth";
 
 const goals = [
   { id: "rush", label: "Remplir les heures creuses", icon: Clock },
@@ -21,6 +22,12 @@ const Merchant = () => {
   const [discount, setDiscount] = useState(20);
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["rush", "stock"]);
   const [autoMode, setAutoMode] = useState(true);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/pro/auth", { replace: true });
+  };
 
   const toggleGoal = (id: string) =>
     setSelectedGoals((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
@@ -33,21 +40,27 @@ const Merchant = () => {
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
           <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-accent text-white">
+              <Sparkles className="h-4 w-4" />
+            </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">JECK Pro</p>
-              <h1 className="font-display text-lg font-extrabold leading-tight">Café Lumière</h1>
+              <h1 className="font-display text-lg font-extrabold leading-tight">Dashboard</h1>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-bold text-success">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-            IA active
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-bold text-success">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+              IA active
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Déconnexion
+            </button>
+          </div>
         </div>
       </header>
 
