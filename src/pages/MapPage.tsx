@@ -4,13 +4,15 @@ import { MobileShell } from "@/components/jeck/MobileShell";
 import { mockOffers } from "@/lib/jeck-data";
 import { moodThemes } from "@/lib/mood-theme";
 import { Link } from "react-router-dom";
+import { useI18n } from "@/lib/i18n";
 
 const MapPage = () => {
+  const { t } = useI18n();
   return (
     <MobileShell>
       <header className="px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)]">
-        <p className="text-xs font-medium text-muted-foreground">Autour de moi</p>
-        <h1 className="font-display text-2xl font-extrabold tracking-tight">Carte des offres</h1>
+        <p className="text-xs font-medium text-muted-foreground">{t("map.subtitle")}</p>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight">{t("map.title")}</h1>
       </header>
 
       <main className="flex-1 px-5">
@@ -61,7 +63,7 @@ const MapPage = () => {
         </div>
 
         <h2 className="mt-6 font-display text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
-          Lieux ({mockOffers.length})
+          {t("map.places")} ({mockOffers.length})
         </h2>
         <div className="mt-3 space-y-2">
           {mockOffers.map((o) => (
