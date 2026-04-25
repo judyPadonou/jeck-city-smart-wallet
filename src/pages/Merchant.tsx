@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMerchantData, type OfferStatus } from "@/hooks/useMerchantData";
+import { Wand2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const goals = [
@@ -24,8 +25,35 @@ const Merchant = () => {
   const navigate = useNavigate();
   const {
     merchant, offers, stats, loading,
-    createMerchant, updateRules, createOffer, updateOfferStatus, deleteOffer,
+    createMerchant, updateRules, createOffer, updateOfferStatus, deleteOffer, generateAIOffer,
   } = useMerchantData();
+  const [generatingAI, setGeneratingAI] = useState(false);
+
+  const handleGenerateAI = async () => {
+    setGeneratingAI(true);
+    try {
+      const getCoords = () =>
+        new Promise<{ lat?: number; lng?: number }>((resolve) => {
+          if (merchant?.lat && merchant?.lng) return resolve({ lat: merchant.lat, lng: merchant.lng });
+          if (!navigator.geolocation) return resolve({});
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve({}),
+            { timeout: 5000 },
+          );
+        });
+      const coords = await getCoords();
+      const res = await generateAIOffer({ ...coords, status: "draft" });
+      toast({
+        title: "Offre IA générée ✨",
+        description: res.rationale ?? "Brouillon ajouté à tes offres.",
+      });
+    } catch (e) {
+      toast({ title: "Erreur IA", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
 
   const initialRules = (merchant?.rules ?? {}) as { discount?: number; goals?: string[]; auto?: boolean };
   const [discount, setDiscount] = useState<number>(initialRules.discount ?? 20);
