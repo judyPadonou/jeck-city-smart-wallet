@@ -1,24 +1,26 @@
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Tag, Sparkles, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Tag, Sparkles, Check, ArrowRight } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { addToWallet, getOfferById } from "@/lib/jeck-data";
 import { moodThemes } from "@/lib/mood-theme";
+import { useI18n } from "@/lib/i18n";
 
 const OfferDetail = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const offer = getOfferById(id);
   const [accepted, setAccepted] = useState(false);
+  const { t } = useI18n();
 
   if (!offer) {
     return (
-      <MobileShell>
+      <MobileShell hideTabs>
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <p className="text-muted-foreground">Cette offre n'existe pas ou a expiré.</p>
+          <p className="text-muted-foreground">{t("offer.notFound")}</p>
           <Link to="/" className="mt-4 text-sm font-semibold text-primary hover:underline">
-            Retour à l'accueil
+            {t("offer.backHome")}
           </Link>
         </div>
       </MobileShell>
