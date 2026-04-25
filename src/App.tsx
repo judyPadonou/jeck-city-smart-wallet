@@ -9,7 +9,10 @@ import Wallet from "./pages/Wallet.tsx";
 import MapPage from "./pages/MapPage.tsx";
 import Profile from "./pages/Profile.tsx";
 import Merchant from "./pages/Merchant.tsx";
+import Auth from "./pages/Auth.tsx";
+import ProAuth from "./pages/ProAuth.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { RequireRole } from "@/components/jeck/RequireRole";
 
 const queryClient = new QueryClient();
 
@@ -20,12 +23,20 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/offer/:id" element={<OfferDetail />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/merchant" element={<Merchant />} />
+          {/* Public auth routes */}
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/pro/auth" element={<ProAuth />} />
+
+          {/* Client-only routes */}
+          <Route path="/" element={<RequireRole role="client"><Index /></RequireRole>} />
+          <Route path="/offer/:id" element={<RequireRole role="client"><OfferDetail /></RequireRole>} />
+          <Route path="/wallet" element={<RequireRole role="client"><Wallet /></RequireRole>} />
+          <Route path="/map" element={<RequireRole role="client"><MapPage /></RequireRole>} />
+          <Route path="/profile" element={<RequireRole role="client"><Profile /></RequireRole>} />
+
+          {/* Pro-only route */}
+          <Route path="/merchant" element={<RequireRole role="pro"><Merchant /></RequireRole>} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
