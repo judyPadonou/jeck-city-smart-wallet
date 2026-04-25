@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+
 import { Bell, Search } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { ContextBadges } from "@/components/jeck/ContextBadges";
