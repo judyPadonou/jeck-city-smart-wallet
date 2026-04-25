@@ -48,10 +48,19 @@ const Merchant = () => {
               <h1 className="font-display text-lg font-extrabold leading-tight">Dashboard</h1>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-bold text-success">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-            IA active
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-bold text-success">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+              IA active
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Déconnexion
+            </button>
+          </div>
         </div>
       </header>
 
