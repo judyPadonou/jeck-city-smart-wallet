@@ -1,16 +1,29 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { Home, Map, Wallet, User } from "lucide-react";
 import { motion } from "framer-motion";
-
-const tabs = [
-  { to: "/", label: "Accueil", icon: Home },
-  { to: "/map", label: "Carte", icon: Map },
-  { to: "/wallet", label: "Portefeuille", icon: Wallet },
-  { to: "/profile", label: "Profil", icon: User },
-];
+import { useI18n } from "@/lib/i18n";
 
 export function BottomTabs() {
   const location = useLocation();
+  const { t, lang } = useI18n();
+
+  const labels: Record<string, Record<string, string>> = {
+    fr: { home: "Accueil", map: "Carte", wallet: "Portefeuille", profile: "Profil" },
+    en: { home: "Home", map: "Map", wallet: "Wallet", profile: "Profile" },
+    de: { home: "Start", map: "Karte", wallet: "Brieftasche", profile: "Profil" },
+  };
+  const L = labels[lang] ?? labels.fr;
+
+  const tabs = [
+    { to: "/", label: L.home, icon: Home },
+    { to: "/map", label: L.map, icon: Map },
+    { to: "/wallet", label: L.wallet, icon: Wallet },
+    { to: "/profile", label: L.profile, icon: User },
+  ];
+
+  // Suppress unused warning for t
+  void t;
+
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/85 backdrop-blur-xl">
       <ul className="mx-auto max-w-md grid grid-cols-4 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
