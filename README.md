@@ -1,4 +1,4 @@
-# 🏙️ City Wallet — Hyperpersonalized Generative Offers
+# 🏙️Hyperpersonalized Generative Offers
 
 > AI-powered city wallet that generates real-time, context-aware offers for local commerce.
 
@@ -6,7 +6,7 @@
 
 ## 📌 Overview
 
-**City Wallet** is an end-to-end MVP designed to bridge the gap between **user intent** and **local merchant opportunities** in real time.
+**Jeck City smart** is an end-to-end MVP designed to bridge the gap between **user intent** and **local merchant opportunities** in real time.
 
 Instead of static coupons, the system generates **hyper-personalized offers** based on:
 - 📍 Location  
