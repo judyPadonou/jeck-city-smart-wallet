@@ -103,7 +103,11 @@ Deno.serve(async (req) => {
       fetch(weatherUrl),
       fetch(overpassUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json",
+          "User-Agent": "JECK-CityWallet/1.0 (contact@jeck.app)",
+        },
         body: `data=${encodeURIComponent(overpassQuery)}`,
       }),
     ]);
