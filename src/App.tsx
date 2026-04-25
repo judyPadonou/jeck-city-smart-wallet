@@ -9,6 +9,7 @@ import Wallet from "./pages/Wallet.tsx";
 import MapPage from "./pages/MapPage.tsx";
 import Profile from "./pages/Profile.tsx";
 import Merchant from "./pages/Merchant.tsx";
+import MerchantAdmin from "./pages/MerchantAdmin.tsx";
 import Auth from "./pages/Auth.tsx";
 import ProAuth from "./pages/ProAuth.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -36,6 +37,7 @@ const App = () => (
 
           {/* Pro-only route */}
           <Route path="/merchant" element={<RequireRole role="pro"><Merchant /></RequireRole>} />
+          <Route path="/merchant/admin" element={<RequireRole role="pro"><MerchantAdmin /></RequireRole>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
