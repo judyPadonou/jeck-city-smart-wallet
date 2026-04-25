@@ -160,7 +160,7 @@ export function useMerchantData() {
       if (!merchant) return;
       const { error } = await supabase
         .from("merchants")
-        .update({ rules })
+        .update({ rules: rules as never })
         .eq("id", merchant.id);
       if (error) throw error;
       setMerchant({ ...merchant, rules });
