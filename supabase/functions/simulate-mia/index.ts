@@ -263,29 +263,45 @@ Crée l'offre la plus pertinente MAINTENANT.`;
     };
     const safeDiscount = Math.max(0, Math.min(maxDiscount, Number(off.discount) || 0));
 
-    // ------- 5) Insert as ACTIVE offer (use service role to bypass owner RLS for the simulation)
-    const { data: inserted, error: insertErr } = await adminClient
-      .from("generated_offers")
-      .insert({
-        merchant_id: chosen.id,
+    // ------- 5) Insert as ACTIVE offer (only when we have a real merchant)
+    let inserted: any = null;
+    if (!isOsmFallback && chosen.id) {
+      const { data: ins, error: insertErr } = await adminClient
+        .from("generated_offers")
+        .insert({
+          merchant_id: chosen.id,
+          title: off.title.slice(0, 120),
+          description: off.description?.slice(0, 500) ?? null,
+          discount: safeDiscount,
+          status: "active",
+          context_used: {
+            weather, mood, hour, distance_m: distance,
+            osm_places: osmPlaces.slice(0, 8),
+            rationale: off.rationale,
+            user_lat: lat, user_lng: lng,
+            generated_at: new Date().toISOString(),
+          },
+        })
+        .select()
+        .single();
+      if (insertErr) throw insertErr;
+      inserted = ins;
+    } else {
+      // Fallback : on renvoie une offre suggérée non persistée
+      inserted = {
+        id: `suggested-${Date.now()}`,
+        merchant_id: null,
         title: off.title.slice(0, 120),
         description: off.description?.slice(0, 500) ?? null,
         discount: safeDiscount,
-        status: "active",
-        context_used: {
-          weather, mood, hour, distance_m: distance,
-          osm_places: osmPlaces.slice(0, 8),
-          rationale: off.rationale,
-          user_lat: lat, user_lng: lng,
-          generated_at: new Date().toISOString(),
-        },
-      })
-      .select()
-      .single();
-    if (insertErr) throw insertErr;
+        status: "suggested",
+        context_used: { rationale: off.rationale },
+      };
+    }
 
     return new Response(JSON.stringify({
       success: true,
+      suggested: isOsmFallback,
       offer: inserted,
       merchant: { id: chosen.id, name: chosen.name, category: chosen.category, distance_m: distance },
       weather, mood, places: osmPlaces.slice(0, 8),
