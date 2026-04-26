@@ -105,7 +105,26 @@ const ProAuth = () => {
             },
           },
         });
-        if (error) throw error;
+        if (error) {
+          // If the user already exists, switch to sign-in mode automatically
+          const msg = (error.message || "").toLowerCase();
+          const code = (error as any).code;
+          if (
+            code === "user_already_exists" ||
+            msg.includes("already registered") ||
+            msg.includes("already exists") ||
+            msg.includes("user already")
+          ) {
+            setMode("signin");
+            toast({
+              title: "Compte déjà existant",
+              description:
+                "Un compte Pro existe déjà avec cet email. Connectez-vous avec votre mot de passe pour finaliser la réclamation.",
+            });
+            return;
+          }
+          throw error;
+        }
         toast({
           title: claimedPlace ? "Vérifiez votre email 📧" : t("auth.proWelcome"),
           description: claimedPlace
@@ -113,6 +132,12 @@ const ProAuth = () => {
             : `Un lien de confirmation a été envoyé à ${email}.`,
         });
       } else {
+        // Make sure the claim is persisted before sign-in too (in case the user
+        // arrived from the Map but already has a Pro account).
+        if (claimedPlace) {
+          localStorage.setItem("jeck:claim-place-pending", JSON.stringify(claimedPlace));
+          sessionStorage.removeItem("jeck:claim-place");
+        }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
