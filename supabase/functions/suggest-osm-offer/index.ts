@@ -201,7 +201,7 @@ Génère l'offre la plus pertinente possible MAINTENANT, en exploitant l'info d'
         discount: safeDiscount,
         rationale: offer.rationale,
       },
-      context: { weather, time },
+      context: { weather, time, payone_flow: payoneFlow },
     }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
