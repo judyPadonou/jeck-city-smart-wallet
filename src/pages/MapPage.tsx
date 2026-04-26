@@ -84,7 +84,7 @@ const MapPage = () => {
         try {
           const { data, error: fnError } = await supabase.functions.invoke(
             "fetch-nearby-places",
-            { body: { lat, lng, radiusKm: 30 } },
+            { body: { lat, lng, radiusKm: 7 } },
           );
           if (fnError) throw new Error(fnError.message);
           if (!data?.success) throw new Error(data?.error ?? "Erreur inconnue");
