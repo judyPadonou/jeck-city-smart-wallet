@@ -107,7 +107,10 @@ const Profile = () => {
               <h2 className="font-display text-xl font-extrabold">
                 {`${firstName} ${lastName}`.trim() || user?.email?.split("@")[0] || "—"}
               </h2>
-              <p className="text-xs text-white/80">{t("profile.member")}</p>
+              <p className="text-xs text-white/80">
+                {t("profile.member")}{" "}
+                {user?.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear()}
+              </p>
             </div>
           </div>
           <div className="relative mt-5 grid grid-cols-2 gap-3">

@@ -56,7 +56,7 @@ const dictionaries: Record<Lang, Dict> = {
 
     "profile.subtitle": "Compte",
     "profile.title": "Profil",
-    "profile.member": "Membre JECK depuis 2024",
+    "profile.member": "Membre JECK depuis",
     "profile.saved": "Économisé",
     "profile.usedOffers": "Offres utilisées",
     "profile.merchantQ": "Vous êtes commerçant ?",
@@ -147,7 +147,7 @@ const dictionaries: Record<Lang, Dict> = {
 
     "profile.subtitle": "Account",
     "profile.title": "Profile",
-    "profile.member": "JECK member since 2024",
+    "profile.member": "JECK member since",
     "profile.saved": "Saved",
     "profile.usedOffers": "Used offers",
     "profile.merchantQ": "Are you a merchant?",
@@ -238,7 +238,7 @@ const dictionaries: Record<Lang, Dict> = {
 
     "profile.subtitle": "Konto",
     "profile.title": "Profil",
-    "profile.member": "JECK-Mitglied seit 2024",
+    "profile.member": "JECK-Mitglied seit",
     "profile.saved": "Gespart",
     "profile.usedOffers": "Genutzte Angebote",
     "profile.merchantQ": "Bist du Händler?",
