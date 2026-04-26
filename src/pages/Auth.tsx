@@ -37,7 +37,8 @@ const Auth = () => {
     const parsed = schema.safeParse({
       email,
       password,
-      displayName: mode === "signup" ? displayName : undefined,
+      firstName: mode === "signup" ? firstName : undefined,
+      lastName: mode === "signup" ? lastName : undefined,
     });
     if (!parsed.success) {
       toast({ title: t("auth.invalid"), description: parsed.error.errors[0]?.message, variant: "destructive" });
@@ -51,7 +52,12 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { display_name: displayName, role: "client" },
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              display_name: `${firstName} ${lastName}`.trim(),
+              role: "client",
+            },
           },
         });
         if (error) throw error;
