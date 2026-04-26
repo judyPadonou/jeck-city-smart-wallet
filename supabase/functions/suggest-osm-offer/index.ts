@@ -1,7 +1,9 @@
 // Edge Function: suggest-osm-offer
-// Generates an AI-suggested offer for an OSM place (no merchant account required).
-// Uses category + weather + current hour to craft a contextual French offer.
+// Generates an AI-suggested offer for an OSM merchant (treated like a Pro merchant in DB).
+// Caches results for 2h in public.generated_offers (source='osm', expires_at).
 // Public function (no JWT required) so visitors can see suggestions.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +13,8 @@ const corsHeaders = {
 };
 
 interface Body {
-  place_id: string;
+  merchant_id?: string; // UUID from public.merchants (preferred)
+  place_id?: string;    // legacy: osm-XXXX string
   name: string;
   category: string;
   lat: number;
