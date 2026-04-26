@@ -1,1 +1,4 @@
 project_id = "hxlzahuhspsksqsgbipe"
+
+[functions.suggest-osm-offer]
+verify_jwt = false
