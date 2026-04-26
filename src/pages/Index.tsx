@@ -45,6 +45,36 @@ const Index = () => {
     );
   }, []);
 
+  // Reverse geocoding via Nominatim (OpenStreetMap) — converts coords → readable address
+  useEffect(() => {
+    if (!coords) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}&zoom=18&addressdetails=1&accept-language=fr`,
+          { signal: controller.signal, headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+        const data = await res.json();
+        const a = data?.address ?? {};
+        const street = [a.house_number, a.road].filter(Boolean).join(" ");
+        const city = a.city || a.town || a.village || a.municipality || "";
+        const postcode = a.postcode || "";
+        const cityPart = [postcode, city].filter(Boolean).join(" ");
+        const formatted = [street, cityPart].filter(Boolean).join(", ") || data?.display_name || null;
+        if (!cancelled) setAddress(formatted);
+      } catch {
+        if (!cancelled) setAddress(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [coords]);
+
   const runMia = useCallback(async (auto = false) => {
     if (!coords) return;
     setLoading(true);
