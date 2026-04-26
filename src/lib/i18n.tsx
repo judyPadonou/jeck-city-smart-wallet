@@ -56,7 +56,7 @@ const dictionaries: Record<Lang, Dict> = {
 
     "profile.subtitle": "Compte",
     "profile.title": "Profil",
-    "profile.member": "Membre JECK depuis 2024",
+    "profile.member": "Membre JECK depuis",
     "profile.saved": "Économisé",
     "profile.usedOffers": "Offres utilisées",
     "profile.merchantQ": "Vous êtes commerçant ?",
