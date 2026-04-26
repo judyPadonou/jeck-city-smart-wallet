@@ -31,6 +31,7 @@ const Index = () => {
   const [qrOpen, setQrOpen] = useState(false);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const [autoEnabled, setAutoEnabled] = useState(true);
+  const [firstName, setFirstName] = useState<string | null>(null);
 
   // Pre-fetch geolocation once on mount (silent fallback to Paris)
   useEffect(() => {
@@ -44,6 +45,32 @@ const Index = () => {
       { timeout: 6000 },
     );
   }, []);
+
+  // Load user's first name from profile (with fallbacks to display_name / email)
+  useEffect(() => {
+    if (!user) {
+      setFirstName(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const fn =
+        data?.first_name?.trim() ||
+        data?.display_name?.trim().split(" ")[0] ||
+        user.email?.split("@")[0] ||
+        null;
+      setFirstName(fn);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Reverse geocoding via Nominatim (OpenStreetMap) — converts coords → readable address
   useEffect(() => {
@@ -151,7 +178,7 @@ const Index = () => {
     <MobileShell>
       <header className="sticky top-0 z-30 flex items-center justify-between bg-background/80 px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)] backdrop-blur-xl">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Bonjour</p>
+          <p className="text-xs font-medium text-muted-foreground">Bonjour{firstName ? ` ${firstName}` : ""}</p>
           <h1 className="font-display text-lg font-extrabold tracking-tight">
             <span className="text-primary">JECK</span> City Wallet
           </h1>
