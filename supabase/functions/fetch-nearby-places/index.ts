@@ -104,12 +104,12 @@ Deno.serve(async (req) => {
     const json = await overpassRes.json();
     const elements: any[] = json?.elements ?? [];
 
-    const places = elements
+    const rawPlaces = elements
       .filter((e) => e.lat && e.lon && e.tags?.name)
       .map((e) => {
         const distance = haversine(lat, lng, e.lat, e.lon);
         return {
-          id: `osm-${e.id}`,
+          osm_id: `osm-${e.id}`,
           name: e.tags.name as string,
           category: categorize(e.tags),
           lat: e.lat as number,
@@ -123,6 +123,66 @@ Deno.serve(async (req) => {
       })
       .sort((a, b) => a.distance_km - b.distance_km)
       .slice(0, 100);
+
+    // Upsert OSM places into public.merchants so they have a stable UUID
+    // and behave like Pro merchants for the rest of the system.
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const upsertRows = rawPlaces.map((p) => ({
+      osm_id: p.osm_id,
+      name: p.name,
+      category: p.category,
+      lat: p.lat,
+      lng: p.lng,
+      address: p.address,
+      source: "osm",
+      owner_id: null,
+      last_seen_at: new Date().toISOString(),
+    }));
+
+    let merchantsById = new Map<string, string>(); // osm_id -> uuid
+    if (upsertRows.length > 0) {
+      const { data: upserted, error: upsertErr } = await supabase
+        .from("merchants")
+        .upsert(upsertRows, { onConflict: "osm_id", ignoreDuplicates: false })
+        .select("id, osm_id");
+
+      if (upsertErr) {
+        console.error("merchants upsert error:", upsertErr);
+      } else if (upserted) {
+        for (const m of upserted) {
+          if (m.osm_id) merchantsById.set(m.osm_id, m.id);
+        }
+      }
+    }
+
+    // If upsert returned nothing for some rows (rare), backfill by select
+    const missing = rawPlaces.filter((p) => !merchantsById.has(p.osm_id)).map((p) => p.osm_id);
+    if (missing.length > 0) {
+      const { data: fetched } = await supabase
+        .from("merchants")
+        .select("id, osm_id")
+        .in("osm_id", missing);
+      for (const m of fetched ?? []) {
+        if (m.osm_id) merchantsById.set(m.osm_id, m.id);
+      }
+    }
+
+    const places = rawPlaces.map((p) => ({
+      id: merchantsById.get(p.osm_id) ?? p.osm_id, // UUID from DB, fallback to osm string
+      osm_id: p.osm_id,
+      merchant_id: merchantsById.get(p.osm_id) ?? null,
+      source: "osm",
+      name: p.name,
+      category: p.category,
+      lat: p.lat,
+      lng: p.lng,
+      address: p.address,
+      distance_km: p.distance_km,
+    }));
 
     return new Response(
       JSON.stringify({
