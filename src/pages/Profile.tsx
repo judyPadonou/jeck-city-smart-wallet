@@ -26,7 +26,11 @@ const Profile = () => {
 
       const rows = data ?? [];
       setUsedOffers(rows.length);
-      setTotalSaved(rows.reduce((sum, r) => sum + Number(r.discount ?? 0), 0));
+      // Estimated avg basket = 15€ (aligned with Payone flow simulation)
+      const AVG_BASKET = 15;
+      setTotalSaved(
+        rows.reduce((sum, r) => sum + (AVG_BASKET * Number(r.discount ?? 0)) / 100, 0),
+      );
     };
 
     loadStats();
