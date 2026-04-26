@@ -270,17 +270,56 @@ Génère l'offre la plus pertinente possible MAINTENANT, en exploitant l'info d'
 
     const safeDiscount = Math.max(5, Math.min(25, Number(offer.discount) || 10));
 
+    const safeTitle = String(offer.title).slice(0, 120);
+    const safeDescription = String(offer.description).slice(0, 300);
+    const contextUsed = {
+      weather,
+      time,
+      payone_flow: payoneFlow,
+      rationale: offer.rationale,
+    };
+    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // +2h
+
+    // Persist to generated_offers (cache)
+    let storedId: string | null = null;
+    try {
+      const { data: stored, error: storeErr } = await supabase
+        .from("generated_offers")
+        .insert({
+          merchant_id: resolvedMerchantId,
+          title: safeTitle,
+          description: safeDescription,
+          discount: safeDiscount,
+          status: "active",
+          source: "osm",
+          context_used: contextUsed,
+          expires_at: expiresAt,
+        })
+        .select("id")
+        .single();
+      if (storeErr) {
+        console.error("store OSM offer error:", storeErr);
+      } else {
+        storedId = stored?.id ?? null;
+      }
+    } catch (e) {
+      console.error("unexpected store error:", e);
+    }
+
     return new Response(JSON.stringify({
       success: true,
       suggested: true,
-      place_id,
+      cached: false,
+      merchant_id: resolvedMerchantId,
       offer: {
-        title: String(offer.title).slice(0, 120),
-        description: String(offer.description).slice(0, 300),
+        id: storedId,
+        title: safeTitle,
+        description: safeDescription,
         discount: safeDiscount,
         rationale: offer.rationale,
       },
-      context: { weather, time, payone_flow: payoneFlow },
+      context: contextUsed,
+      expires_at: expiresAt,
     }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
