@@ -13,6 +13,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const [usedOffers, setUsedOffers] = useState(0);
   const [totalSaved, setTotalSaved] = useState(0);
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
 
   useEffect(() => {
     if (!user) return;
