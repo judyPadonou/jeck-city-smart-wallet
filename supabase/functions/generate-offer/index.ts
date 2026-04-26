@@ -238,6 +238,7 @@ Génère maintenant l'offre la plus pertinente possible pour MAINTENANT, en expl
         context_used: {
           weather: context?.weather ?? null,
           places: context?.places ?? null,
+          payone_flow: payoneFlow,
           rationale: offer.rationale,
           rules_snapshot: rules,
           generated_at: new Date().toISOString(),
