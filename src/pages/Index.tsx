@@ -178,7 +178,7 @@ const Index = () => {
     <MobileShell>
       <header className="sticky top-0 z-30 flex items-center justify-between bg-background/80 px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)] backdrop-blur-xl">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Bonjour</p>
+          <p className="text-xs font-medium text-muted-foreground">Bonjour{firstName ? ` ${firstName}` : ""}</p>
           <h1 className="font-display text-lg font-extrabold tracking-tight">
             <span className="text-primary">JECK</span> City Wallet
           </h1>
