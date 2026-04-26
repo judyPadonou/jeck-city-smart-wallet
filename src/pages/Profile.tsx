@@ -19,6 +19,27 @@ const Profile = () => {
   useEffect(() => {
     if (!user) return;
 
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data) {
+        const fn = (data.first_name ?? "").trim();
+        const ln = (data.last_name ?? "").trim();
+        if (fn || ln) {
+          setFirstName(fn);
+          setLastName(ln);
+        } else if (data.display_name) {
+          // Fallback: split display_name into first/last
+          const parts = data.display_name.trim().split(/\s+/);
+          setFirstName(parts[0] ?? "");
+          setLastName(parts.slice(1).join(" "));
+        }
+      }
+    };
+
     const loadStats = async () => {
       const { data } = await supabase
         .from("generated_offers")
@@ -35,6 +56,7 @@ const Profile = () => {
       );
     };
 
+    loadProfile();
     loadStats();
 
     const channel = supabase
