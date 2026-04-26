@@ -103,6 +103,45 @@ export type Database = {
         }
         Relationships: []
       }
+      payone_transaction_flow: {
+        Row: {
+          avg_basket: number
+          created_at: string
+          hour_slot: number
+          id: string
+          is_off_peak: boolean
+          merchant_id: string
+          recorded_for: string
+          total_amount: number
+          transaction_count: number
+          updated_at: string
+        }
+        Insert: {
+          avg_basket?: number
+          created_at?: string
+          hour_slot: number
+          id?: string
+          is_off_peak?: boolean
+          merchant_id: string
+          recorded_for?: string
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_basket?: number
+          created_at?: string
+          hour_slot?: number
+          id?: string
+          is_off_peak?: boolean
+          merchant_id?: string
+          recorded_for?: string
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_category: string | null
