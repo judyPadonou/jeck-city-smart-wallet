@@ -31,6 +31,7 @@ const Index = () => {
   const [qrOpen, setQrOpen] = useState(false);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const [autoEnabled, setAutoEnabled] = useState(true);
+  const [firstName, setFirstName] = useState<string | null>(null);
 
   // Pre-fetch geolocation once on mount (silent fallback to Paris)
   useEffect(() => {
