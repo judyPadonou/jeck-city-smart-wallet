@@ -168,6 +168,8 @@ Deno.serve(async (req) => {
       distance = Math.round(ranked[0].d);
     } else {
       // Fallback : aucun commerce inscrit -> on prend le lieu OSM le plus proche
+      // et on l'upsert dans public.merchants (source='osm') pour le traiter
+      // EXACTEMENT comme un commerce Pro (vrai UUID, offre persistée, acceptation possible).
       const rankedOsm = osmPlaces
         .filter((p) => typeof p.lat === "number" && typeof p.lng === "number")
         .map((p) => ({ p, d: distM(lat, lng, p.lat, p.lng) }))
@@ -178,12 +180,43 @@ Deno.serve(async (req) => {
         });
       }
       const top = rankedOsm[0];
-      chosen = {
-        id: null,
-        name: top.p.name,
-        category: top.p.type ?? "Commerce",
-        rules: {},
-      };
+      const osmIdStr = `osm-${top.p.id}`;
+      const categoryGuess = (() => {
+        const t = (top.p.type ?? "").toLowerCase();
+        if (t === "cafe") return "Café";
+        if (t === "restaurant") return "Restaurant";
+        if (t === "bar" || t === "pub") return "Bar";
+        if (t === "fast_food") return "Fast-food";
+        if (t === "bakery") return "Boulangerie";
+        if (t === "ice_cream") return "Glacier";
+        return "Commerce";
+      })();
+
+      // Upsert as a real merchant row (source='osm', owner_id=null)
+      const { data: upserted, error: upsertErr } = await adminClient
+        .from("merchants")
+        .upsert(
+          {
+            osm_id: osmIdStr,
+            name: top.p.name,
+            category: categoryGuess,
+            lat: top.p.lat,
+            lng: top.p.lng,
+            source: "osm",
+            owner_id: null,
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: "osm_id", ignoreDuplicates: false },
+        )
+        .select("*")
+        .single();
+
+      if (upsertErr || !upserted) {
+        console.error("OSM merchant upsert error:", upsertErr);
+        throw new Error("Impossible d'enregistrer le commerce OSM");
+      }
+
+      chosen = upserted;
       distance = Math.round(top.d);
       isOsmFallback = true;
     }
