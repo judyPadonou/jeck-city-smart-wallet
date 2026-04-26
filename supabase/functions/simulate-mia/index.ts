@@ -296,41 +296,34 @@ Crée l'offre la plus pertinente MAINTENANT.`;
     };
     const safeDiscount = Math.max(0, Math.min(maxDiscount, Number(off.discount) || 0));
 
-    // ------- 5) Insert as ACTIVE offer (only when we have a real merchant)
-    let inserted: any = null;
-    if (!isOsmFallback && chosen.id) {
-      const { data: ins, error: insertErr } = await adminClient
-        .from("generated_offers")
-        .insert({
-          merchant_id: chosen.id,
-          title: off.title.slice(0, 120),
-          description: off.description?.slice(0, 500) ?? null,
-          discount: safeDiscount,
-          status: "active",
-          context_used: {
-            weather, mood, hour, distance_m: distance,
-            osm_places: osmPlaces.slice(0, 8),
-            rationale: off.rationale,
-            user_lat: lat, user_lng: lng,
-            generated_at: new Date().toISOString(),
-          },
-        })
-        .select()
-        .single();
-      if (insertErr) throw insertErr;
-      inserted = ins;
-    } else {
-      // Fallback : on renvoie une offre suggérée non persistée
-      inserted = {
-        id: `suggested-${Date.now()}`,
-        merchant_id: null,
-        title: off.title.slice(0, 120),
-        description: off.description?.slice(0, 500) ?? null,
-        discount: safeDiscount,
-        status: "suggested",
-        context_used: { rationale: off.rationale },
-      };
+    // ------- 5) Insert as ACTIVE offer
+    // OSM merchants are now persisted with a real UUID, so the insert flow is identical
+    // to Pro merchants. Only difference: source='osm' + 2h expires_at (cache court).
+    const offerPayload: Record<string, unknown> = {
+      merchant_id: chosen.id,
+      title: off.title.slice(0, 120),
+      description: off.description?.slice(0, 500) ?? null,
+      discount: safeDiscount,
+      status: "active",
+      source: isOsmFallback ? "osm" : "pro",
+      context_used: {
+        weather, mood, hour, distance_m: distance,
+        osm_places: osmPlaces.slice(0, 8),
+        rationale: off.rationale,
+        user_lat: lat, user_lng: lng,
+        generated_at: new Date().toISOString(),
+      },
+    };
+    if (isOsmFallback) {
+      offerPayload.expires_at = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
     }
+
+    const { data: inserted, error: insertErr } = await adminClient
+      .from("generated_offers")
+      .insert(offerPayload)
+      .select()
+      .single();
+    if (insertErr) throw insertErr;
 
     return new Response(JSON.stringify({
       success: true,
