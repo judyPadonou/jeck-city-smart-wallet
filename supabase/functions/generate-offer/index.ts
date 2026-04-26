@@ -92,6 +92,47 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 2b) Load Payone transaction flow (last 24h) for this merchant.
+    // If no rows exist for today, trigger a simulation then re-fetch.
+    const today = new Date().toISOString().slice(0, 10);
+    let { data: flowRows } = await supabase
+      .from("payone_transaction_flow")
+      .select("hour_slot, transaction_count, total_amount, avg_basket, is_off_peak")
+      .eq("merchant_id", merchant.id)
+      .eq("recorded_for", today)
+      .order("hour_slot", { ascending: true });
+
+    if (!flowRows || flowRows.length === 0) {
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/simulate-payone-flow`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": authHeader },
+          body: JSON.stringify({ merchant_id: merchant.id }),
+        });
+        const { data: refreshed } = await supabase
+          .from("payone_transaction_flow")
+          .select("hour_slot, transaction_count, total_amount, avg_basket, is_off_peak")
+          .eq("merchant_id", merchant.id)
+          .eq("recorded_for", today)
+          .order("hour_slot", { ascending: true });
+        flowRows = refreshed ?? [];
+      } catch (e) {
+        console.warn("simulate-payone-flow failed:", e);
+      }
+    }
+
+    const currentHour = new Date().getHours();
+    const currentSlot = flowRows?.find((r: any) => r.hour_slot === currentHour) ?? null;
+    const offPeakHours = (flowRows ?? []).filter((r: any) => r.is_off_peak).map((r: any) => r.hour_slot);
+    const isCurrentlyOffPeak = !!currentSlot?.is_off_peak;
+    const payoneFlow = {
+      current_hour: currentHour,
+      current_slot: currentSlot,
+      is_currently_off_peak: isCurrentlyOffPeak,
+      off_peak_hours: offPeakHours,
+      hourly: flowRows ?? [],
+    };
+
     // 3) Build prompt + call Lovable AI Gateway with structured tool-calling
     const rules = (merchant.rules ?? {}) as { discount?: number; goals?: string[]; auto?: boolean };
 
