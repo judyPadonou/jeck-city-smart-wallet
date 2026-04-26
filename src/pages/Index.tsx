@@ -24,6 +24,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SimResult | null>(null);
   const [accepting, setAccepting] = useState(false);
