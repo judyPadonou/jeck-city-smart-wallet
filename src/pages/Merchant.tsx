@@ -74,12 +74,57 @@ const Merchant = () => {
   const [bizName, setBizName] = useState("");
   const [bizCategory, setBizCategory] = useState("Café");
   const [creating, setCreating] = useState(false);
+  const [claimedAddress, setClaimedAddress] = useState<string | null>(null);
 
   // New offer form
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newDiscount, setNewDiscount] = useState(15);
   const [submittingOffer, setSubmittingOffer] = useState(false);
+
+  // Auto-consume "claim place pending" once email is confirmed and we have no merchant yet.
+  // This pre-fills the onboarding form with OSM data and auto-creates the merchant.
+  useEffect(() => {
+    if (loading || merchant || creating) return;
+    const raw = localStorage.getItem("jeck:claim-place-pending");
+    if (!raw) return;
+    let p: { name?: string; category?: string; lat?: number; lng?: number; address?: string | null };
+    try {
+      p = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem("jeck:claim-place-pending");
+      return;
+    }
+    if (p.name) setBizName(p.name);
+    if (p.category) setBizCategory(p.category);
+    if (p.address) setClaimedAddress(p.address);
+
+    (async () => {
+      setCreating(true);
+      try {
+        await createMerchant({
+          name: p.name ?? "Mon commerce",
+          category: p.category ?? "Autre",
+          lat: p.lat,
+          lng: p.lng,
+        });
+        localStorage.removeItem("jeck:claim-place-pending");
+        toast({
+          title: "Fiche réclamée ✨",
+          description: `« ${p.name} » est désormais liée à votre compte.`,
+        });
+      } catch (e) {
+        toast({
+          title: "Erreur réclamation",
+          description: (e as Error).message,
+          variant: "destructive",
+        });
+      } finally {
+        setCreating(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, merchant]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -187,10 +232,22 @@ const Merchant = () => {
                 <Store className="h-5 w-5" />
               </span>
               <div className="flex-1">
-                <h2 className="font-display text-lg font-extrabold">Créez votre commerce</h2>
+                <h2 className="font-display text-lg font-extrabold">
+                  {claimedAddress ? "Confirmez votre fiche" : "Créez votre commerce"}
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Pour commencer à publier des offres, enregistrez votre commerce.
+                  {claimedAddress
+                    ? "Nous avons pré-rempli les informations depuis OpenStreetMap. Vérifiez puis confirmez."
+                    : "Pour commencer à publier des offres, enregistrez votre commerce."}
                 </p>
+                {claimedAddress && (
+                  <div className="mt-3 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 px-3 py-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-accent">
+                      📍 Adresse OSM
+                    </p>
+                    <p className="mt-0.5 text-xs text-foreground">{claimedAddress}</p>
+                  </div>
+                )}
                 <form onSubmit={handleCreateMerchant} className="mt-4 grid gap-3 sm:grid-cols-2">
                   <input
                     type="text"

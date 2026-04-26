@@ -70,6 +70,11 @@ const ProAuth = () => {
     setSubmitting(true);
     try {
       if (mode === "signup") {
+        // Persist claim BEFORE signup so the merchant page can use it after email confirmation
+        if (claimedPlace) {
+          localStorage.setItem("jeck:claim-place-pending", JSON.stringify(claimedPlace));
+          sessionStorage.removeItem("jeck:claim-place");
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -84,12 +89,12 @@ const ProAuth = () => {
           },
         });
         if (error) throw error;
-        // Persist claim coords so the merchant page can create the merchant entry
-        if (claimedPlace) {
-          sessionStorage.setItem("jeck:claim-place-pending", JSON.stringify(claimedPlace));
-          sessionStorage.removeItem("jeck:claim-place");
-        }
-        toast({ title: t("auth.proWelcome") });
+        toast({
+          title: claimedPlace ? "Vérifiez votre email 📧" : t("auth.proWelcome"),
+          description: claimedPlace
+            ? `Un lien de confirmation a été envoyé à ${email}. Cliquez dessus pour activer votre compte et finaliser la réclamation de « ${claimedPlace.name} ».`
+            : `Un lien de confirmation a été envoyé à ${email}.`,
+        });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

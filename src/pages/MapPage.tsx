@@ -157,7 +157,7 @@ const MapPage = () => {
       }),
     );
     closeModal();
-    navigate("/pro-auth");
+    navigate("/pro/auth");
   }
 
   return (
