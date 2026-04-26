@@ -22,9 +22,11 @@ export type Database = {
           created_at: string
           description: string | null
           discount: number
+          expires_at: string | null
           id: string
           merchant_id: string
           qr_code: string | null
+          source: string
           status: Database["public"]["Enums"]["offer_status"]
           title: string
           updated_at: string
@@ -36,9 +38,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount?: number
+          expires_at?: string | null
           id?: string
           merchant_id: string
           qr_code?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["offer_status"]
           title: string
           updated_at?: string
@@ -50,9 +54,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount?: number
+          expires_at?: string | null
           id?: string
           merchant_id?: string
           qr_code?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["offer_status"]
           title?: string
           updated_at?: string
@@ -69,36 +75,48 @@ export type Database = {
       }
       merchants: {
         Row: {
+          address: string | null
           category: string
           created_at: string
           id: string
+          last_seen_at: string
           lat: number | null
           lng: number | null
           name: string
-          owner_id: string
+          osm_id: string | null
+          owner_id: string | null
           rules: Json
+          source: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           category: string
           created_at?: string
           id?: string
+          last_seen_at?: string
           lat?: number | null
           lng?: number | null
           name: string
-          owner_id: string
+          osm_id?: string | null
+          owner_id?: string | null
           rules?: Json
+          source?: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           category?: string
           created_at?: string
           id?: string
+          last_seen_at?: string
           lat?: number | null
           lng?: number | null
           name?: string
-          owner_id?: string
+          osm_id?: string | null
+          owner_id?: string | null
           rules?: Json
+          source?: string
           updated_at?: string
         }
         Relationships: []
