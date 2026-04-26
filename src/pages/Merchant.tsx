@@ -74,12 +74,57 @@ const Merchant = () => {
   const [bizName, setBizName] = useState("");
   const [bizCategory, setBizCategory] = useState("Café");
   const [creating, setCreating] = useState(false);
+  const [claimedAddress, setClaimedAddress] = useState<string | null>(null);
 
   // New offer form
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newDiscount, setNewDiscount] = useState(15);
   const [submittingOffer, setSubmittingOffer] = useState(false);
+
+  // Auto-consume "claim place pending" once email is confirmed and we have no merchant yet.
+  // This pre-fills the onboarding form with OSM data and auto-creates the merchant.
+  useEffect(() => {
+    if (loading || merchant || creating) return;
+    const raw = localStorage.getItem("jeck:claim-place-pending");
+    if (!raw) return;
+    let p: { name?: string; category?: string; lat?: number; lng?: number; address?: string | null };
+    try {
+      p = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem("jeck:claim-place-pending");
+      return;
+    }
+    if (p.name) setBizName(p.name);
+    if (p.category) setBizCategory(p.category);
+    if (p.address) setClaimedAddress(p.address);
+
+    (async () => {
+      setCreating(true);
+      try {
+        await createMerchant({
+          name: p.name ?? "Mon commerce",
+          category: p.category ?? "Autre",
+          lat: p.lat,
+          lng: p.lng,
+        });
+        localStorage.removeItem("jeck:claim-place-pending");
+        toast({
+          title: "Fiche réclamée ✨",
+          description: `« ${p.name} » est désormais liée à votre compte.`,
+        });
+      } catch (e) {
+        toast({
+          title: "Erreur réclamation",
+          description: (e as Error).message,
+          variant: "destructive",
+        });
+      } finally {
+        setCreating(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, merchant]);
 
   const handleSignOut = async () => {
     await signOut();
