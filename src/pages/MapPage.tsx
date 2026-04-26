@@ -118,7 +118,8 @@ const MapPage = () => {
         "suggest-osm-offer",
         {
           body: {
-            place_id: place.id,
+            merchant_id: place.merchant_id ?? place.id,
+            place_id: place.osm_id ?? place.id,
             name: place.name,
             category: place.category,
             lat: place.lat,
