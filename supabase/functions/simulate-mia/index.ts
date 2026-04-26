@@ -192,11 +192,41 @@ Deno.serve(async (req) => {
         return "Commerce";
       })();
 
-      // Upsert as a real merchant row (source='osm', owner_id=null)
-      const { data: upserted, error: upsertErr } = await adminClient
+      // Lookup-then-insert (the unique index on osm_id is partial,
+      // so ON CONFLICT can't target it — we emulate upsert manually).
+      let upserted: any = null;
+      const { data: existing, error: lookupErr } = await adminClient
         .from("merchants")
-        .upsert(
-          {
+        .select("*")
+        .eq("osm_id", osmIdStr)
+        .maybeSingle();
+      if (lookupErr) {
+        console.error("OSM merchant lookup error:", lookupErr);
+        throw new Error("Impossible d'enregistrer le commerce OSM");
+      }
+
+      if (existing) {
+        const { data: updated, error: updErr } = await adminClient
+          .from("merchants")
+          .update({
+            name: top.p.name,
+            category: categoryGuess,
+            lat: top.p.lat,
+            lng: top.p.lng,
+            last_seen_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id)
+          .select("*")
+          .single();
+        if (updErr) {
+          console.error("OSM merchant update error:", updErr);
+          throw new Error("Impossible d'enregistrer le commerce OSM");
+        }
+        upserted = updated;
+      } else {
+        const { data: inserted, error: insErr } = await adminClient
+          .from("merchants")
+          .insert({
             osm_id: osmIdStr,
             name: top.p.name,
             category: categoryGuess,
@@ -205,15 +235,14 @@ Deno.serve(async (req) => {
             source: "osm",
             owner_id: null,
             last_seen_at: new Date().toISOString(),
-          },
-          { onConflict: "osm_id", ignoreDuplicates: false },
-        )
-        .select("*")
-        .single();
-
-      if (upsertErr || !upserted) {
-        console.error("OSM merchant upsert error:", upsertErr);
-        throw new Error("Impossible d'enregistrer le commerce OSM");
+          })
+          .select("*")
+          .single();
+        if (insErr) {
+          console.error("OSM merchant insert error:", insErr);
+          throw new Error("Impossible d'enregistrer le commerce OSM");
+        }
+        upserted = inserted;
       }
 
       chosen = upserted;
