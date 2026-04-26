@@ -87,7 +87,7 @@ const Profile = () => {
           <div className="relative mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-white/15 p-3 backdrop-blur-md">
               <p className="text-[10px] uppercase tracking-wider text-white/70">{t("profile.saved")}</p>
-              <p className="font-display text-2xl font-extrabold">{totalSaved}%</p>
+              <p className="font-display text-2xl font-extrabold">{totalSaved.toFixed(2)}€</p>
             </div>
             <div className="rounded-2xl bg-white/15 p-3 backdrop-blur-md">
               <p className="text-[10px] uppercase tracking-wider text-white/70">{t("profile.usedOffers")}</p>
