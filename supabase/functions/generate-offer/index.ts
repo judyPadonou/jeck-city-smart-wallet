@@ -137,11 +137,12 @@ Deno.serve(async (req) => {
     const rules = (merchant.rules ?? {}) as { discount?: number; goals?: string[]; auto?: boolean };
 
     const systemPrompt = `Tu es un marketeur local expert, spécialisé dans le marketing contextuel pour petits commerces.
-Ta mission : générer UNE offre promotionnelle courte, crédible, immédiatement actionnable, qui répond au contexte météo et au quartier.
+Ta mission : générer UNE offre promotionnelle courte, crédible, immédiatement actionnable, qui répond au contexte météo, au quartier ET au flux de transactions Payone.
 Règles:
 - Le ton doit être chaleureux, local, naturel (pas de jargon marketing).
 - L'offre doit s'appuyer sur la météo: pluie/froid -> abri + boisson chaude; chaleur -> boisson fraîche, terrasse; soleil -> à emporter, terrasse...
 - Tiens compte de la catégorie du commerce et des concurrents proches pour te différencier.
+- **Flux Payone (TRÈS IMPORTANT)** : si l'heure actuelle est une "heure creuse" (is_currently_off_peak=true ou très peu de transactions), pousse une remise nettement plus agressive (jusqu'au max autorisé) et formule l'offre comme un coup de boost ("Heure creuse", "Happy hour", "Boost de fin d'après-midi", etc.). Si on est en pleine heure de pointe, reste sur une remise modérée pour ne pas sacrifier de marge.
 - La remise doit rester dans une fourchette raisonnable (5%-${rules.discount ?? 30}%).
 - Le titre doit faire moins de 60 caractères.
 - La description doit faire 1 à 2 phrases (max 220 caractères).
@@ -156,7 +157,10 @@ Règles:
 Contexte météo / lieu (JSON):
 ${JSON.stringify(context ?? { note: "Pas de coordonnées disponibles" }, null, 2)}
 
-Génère maintenant l'offre la plus pertinente possible pour MAINTENANT.`;
+Flux de transactions Payone (24h, JSON):
+${JSON.stringify(payoneFlow, null, 2)}
+
+Génère maintenant l'offre la plus pertinente possible pour MAINTENANT, en exploitant explicitement l'information d'heure creuse si applicable.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
