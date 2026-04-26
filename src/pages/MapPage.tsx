@@ -1,13 +1,82 @@
-import { motion } from "framer-motion";
-import { MapPin, Navigation } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { MapPin, Loader2 } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
-import { mockOffers } from "@/lib/jeck-data";
-import { moodThemes } from "@/lib/mood-theme";
-import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
+
+interface MerchantRow {
+  id: string;
+  name: string;
+  category: string;
+  lat: number | null;
+  lng: number | null;
+}
+
+// Custom emoji-style marker
+const createIcon = (emoji: string) =>
+  L.divIcon({
+    className: "jeck-marker",
+    html: `<div style="
+      display:flex;align-items:center;justify-content:center;
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary)/0.7));
+      color:#fff;font-size:20px;
+      box-shadow:0 6px 16px -4px hsl(var(--primary)/0.5);
+      border:3px solid #fff;
+    ">${emoji}</div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+
+const categoryEmoji = (cat: string) => {
+  const c = cat.toLowerCase();
+  if (c.includes("café") || c.includes("cafe")) return "☕";
+  if (c.includes("rest")) return "🍽️";
+  if (c.includes("bar")) return "🍸";
+  if (c.includes("boul") || c.includes("bake")) return "🥐";
+  if (c.includes("shop") || c.includes("boutique") || c.includes("store")) return "🛍️";
+  return "📍";
+};
 
 const MapPage = () => {
   const { t } = useI18n();
+  const [merchants, setMerchants] = useState<MerchantRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userPos, setUserPos] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("merchants")
+        .select("id,name,category,lat,lng");
+      if (!error && data) {
+        setMerchants(data.filter((m) => m.lat != null && m.lng != null) as MerchantRow[]);
+      }
+      setLoading(false);
+    })();
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => setUserPos([p.coords.latitude, p.coords.longitude]),
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000 },
+      );
+    }
+  }, []);
+
+  const center = useMemo<[number, number]>(() => {
+    if (userPos) return userPos;
+    if (merchants.length > 0) {
+      const avgLat = merchants.reduce((s, m) => s + (m.lat ?? 0), 0) / merchants.length;
+      const avgLng = merchants.reduce((s, m) => s + (m.lng ?? 0), 0) / merchants.length;
+      return [avgLat, avgLng];
+    }
+    return [48.8566, 2.3522]; // Paris fallback
+  }, [userPos, merchants]);
+
   return (
     <MobileShell>
       <header className="px-5 pb-3 pt-[max(env(safe-area-inset-top),1rem)]">
@@ -16,74 +85,80 @@ const MapPage = () => {
       </header>
 
       <main className="flex-1 px-5">
-        {/* Mock map surface */}
-        <div className="relative h-72 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-rain-soft via-secondary to-sun-soft shadow-soft">
-          {/* Grid lines */}
-          <svg className="absolute inset-0 h-full w-full opacity-40" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                <path d="M 32 0 L 0 0 0 32" fill="none" stroke="hsl(var(--border))" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-
-          {/* Center pin (you) */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <span className="absolute inset-0 -m-3 animate-ping rounded-full bg-primary/30" />
-            <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-elegant">
-              <Navigation className="h-3 w-3" />
+        <div className="relative h-72 overflow-hidden rounded-3xl border border-border shadow-soft">
+          {loading ? (
+            <div className="flex h-full items-center justify-center bg-muted">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          </div>
-
-          {/* Offer pins */}
-          {mockOffers.slice(0, 5).map((o, i) => {
-            const angle = (i / 5) * Math.PI * 2;
-            const r = 35 + (i % 2) * 10;
-            const x = 50 + Math.cos(angle) * r;
-            const y = 50 + Math.sin(angle) * r;
-            return (
-              <Link
-                to={`/offer/${o.id}`}
-                key={o.id}
-                style={{ left: `${x}%`, top: `${y}%` }}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-              >
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1 * i, type: "spring", stiffness: 200 }}
-                  className={`flex h-11 w-11 items-center justify-center rounded-2xl ${moodThemes[o.mood].gradient} text-xl shadow-elegant ring-4 ring-white/80`}
+          ) : (
+            <MapContainer
+              center={center}
+              zoom={14}
+              scrollWheelZoom={false}
+              style={{ height: "100%", width: "100%" }}
+            >
+              <TileLayer
+                attribution='&copy; OpenStreetMap'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {userPos && (
+                <CircleMarker
+                  center={userPos}
+                  radius={8}
+                  pathOptions={{
+                    color: "hsl(var(--primary))",
+                    fillColor: "hsl(var(--primary))",
+                    fillOpacity: 0.9,
+                  }}
                 >
-                  {o.emoji}
-                </motion.div>
-              </Link>
-            );
-          })}
+                  <Popup>Vous êtes ici</Popup>
+                </CircleMarker>
+              )}
+              {merchants.map((m) => (
+                <Marker
+                  key={m.id}
+                  position={[m.lat!, m.lng!]}
+                  icon={createIcon(categoryEmoji(m.category))}
+                >
+                  <Popup>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold">{m.name}</p>
+                      <p className="text-xs text-muted-foreground">{m.category}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          )}
         </div>
 
         <h2 className="mt-6 font-display text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
-          {t("map.places")} ({mockOffers.length})
+          {t("map.places")} ({merchants.length})
         </h2>
-        <div className="mt-3 space-y-2">
-          {mockOffers.map((o) => (
-            <Link
-              key={o.id}
-              to={`/offer/${o.id}`}
-              className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/40"
+        <div className="mt-3 space-y-2 pb-6">
+          {merchants.length === 0 && !loading && (
+            <p className="rounded-2xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+              Aucun commerce enregistré pour le moment.
+            </p>
+          )}
+          {merchants.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
             >
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${moodThemes[o.mood].accentSoft} text-xl`}>
-                {o.emoji}
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-xl">
+                {categoryEmoji(m.category)}
               </div>
               <div className="flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{o.merchant}</p>
-                <p className="text-sm font-bold">{o.title}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {m.category}
+                </p>
+                <p className="text-sm font-bold">{m.name}</p>
               </div>
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
                 <MapPin className="h-3 w-3" />
-                {o.distance}m
               </span>
-            </Link>
+            </div>
           ))}
         </div>
       </main>
