@@ -165,7 +165,7 @@ const Index = () => {
         <div className="mb-3 flex items-center justify-between gap-2">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
             <MapPin className="h-3 w-3" />
-            {coords ? `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}` : "Localisation…"}
+            {address ?? (coords ? "Recherche de l'adresse…" : "Localisation…")}
           </p>
           <button
             onClick={() => setAutoEnabled((v) => !v)}
