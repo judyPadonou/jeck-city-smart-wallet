@@ -2,20 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, AlertCircle } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
-interface MerchantRow {
+interface NearbyPlace {
   id: string;
   name: string;
   category: string;
-  lat: number | null;
-  lng: number | null;
+  lat: number;
+  lng: number;
+  address: string | null;
+  distance_km: number;
 }
 
-// Custom emoji-style marker
 const createIcon = (emoji: string) =>
   L.divIcon({
     className: "jeck-marker",
@@ -37,45 +38,57 @@ const categoryEmoji = (cat: string) => {
   if (c.includes("rest")) return "🍽️";
   if (c.includes("bar")) return "🍸";
   if (c.includes("boul") || c.includes("bake")) return "🥐";
-  if (c.includes("shop") || c.includes("boutique") || c.includes("store")) return "🛍️";
+  if (c.includes("fast")) return "🍔";
+  if (c.includes("bout") || c.includes("shop") || c.includes("store")) return "🛍️";
   return "📍";
 };
 
 const MapPage = () => {
   const { t } = useI18n();
-  const [merchants, setMerchants] = useState<MerchantRow[]>([]);
+  const [places, setPlaces] = useState<NearbyPlace[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from("merchants")
-        .select("id,name,category,lat,lng");
-      if (!error && data) {
-        setMerchants(data.filter((m) => m.lat != null && m.lng != null) as MerchantRow[]);
-      }
+    if (!("geolocation" in navigator)) {
+      setError("Géolocalisation non disponible sur cet appareil.");
       setLoading(false);
-    })();
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => setUserPos([p.coords.latitude, p.coords.longitude]),
-        () => {},
-        { enableHighAccuracy: true, timeout: 5000 },
-      );
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (p) => {
+        const lat = p.coords.latitude;
+        const lng = p.coords.longitude;
+        setUserPos([lat, lng]);
+
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke(
+            "fetch-nearby-places",
+            { body: { lat, lng, radiusKm: 30 } },
+          );
+          if (fnError) throw new Error(fnError.message);
+          if (!data?.success) throw new Error(data?.error ?? "Erreur inconnue");
+          setPlaces(data.places ?? []);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Erreur de chargement");
+        } finally {
+          setLoading(false);
+        }
+      },
+      () => {
+        setError("Impossible d'obtenir votre position. Autorisez la géolocalisation.");
+        setLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }, []);
 
   const center = useMemo<[number, number]>(() => {
     if (userPos) return userPos;
-    if (merchants.length > 0) {
-      const avgLat = merchants.reduce((s, m) => s + (m.lat ?? 0), 0) / merchants.length;
-      const avgLng = merchants.reduce((s, m) => s + (m.lng ?? 0), 0) / merchants.length;
-      return [avgLat, avgLng];
-    }
-    return [48.8566, 2.3522]; // Paris fallback
-  }, [userPos, merchants]);
+    return [48.8566, 2.3522];
+  }, [userPos]);
 
   return (
     <MobileShell>
@@ -87,13 +100,14 @@ const MapPage = () => {
       <main className="flex-1 px-5">
         <div className="relative h-72 overflow-hidden rounded-3xl border border-border shadow-soft">
           {loading ? (
-            <div className="flex h-full items-center justify-center bg-muted">
+            <div className="flex h-full flex-col items-center justify-center gap-2 bg-muted">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground">Recherche dans un rayon de 30 km…</p>
             </div>
           ) : (
             <MapContainer
               center={center}
-              zoom={14}
+              zoom={13}
               scrollWheelZoom={false}
               style={{ height: "100%", width: "100%" }}
             >
@@ -114,16 +128,17 @@ const MapPage = () => {
                   <Popup>Vous êtes ici</Popup>
                 </CircleMarker>
               )}
-              {merchants.map((m) => (
+              {places.map((p) => (
                 <Marker
-                  key={m.id}
-                  position={[m.lat!, m.lng!]}
-                  icon={createIcon(categoryEmoji(m.category))}
+                  key={p.id}
+                  position={[p.lat, p.lng]}
+                  icon={createIcon(categoryEmoji(p.category))}
                 >
                   <Popup>
                     <div className="space-y-1">
-                      <p className="text-sm font-bold">{m.name}</p>
-                      <p className="text-xs text-muted-foreground">{m.category}</p>
+                      <p className="text-sm font-bold">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.category}</p>
+                      <p className="text-xs">{p.distance_km} km</p>
                     </div>
                   </Popup>
                 </Marker>
@@ -132,31 +147,44 @@ const MapPage = () => {
           )}
         </div>
 
+        {error && (
+          <div className="mt-4 flex items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <h2 className="mt-6 font-display text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
-          {t("map.places")} ({merchants.length})
+          {t("map.places")} ({places.length})
         </h2>
         <div className="mt-3 space-y-2 pb-6">
-          {merchants.length === 0 && !loading && (
+          {places.length === 0 && !loading && !error && (
             <p className="rounded-2xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              Aucun commerce enregistré pour le moment.
+              Aucun lieu trouvé dans un rayon de 30 km.
             </p>
           )}
-          {merchants.map((m) => (
+          {places.map((p) => (
             <div
-              key={m.id}
+              key={p.id}
               className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-xl">
-                {categoryEmoji(m.category)}
+                {categoryEmoji(p.category)}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {m.category}
+                  {p.category}
                 </p>
-                <p className="text-sm font-bold">{m.name}</p>
+                <p className="truncate text-sm font-bold">{p.name}</p>
+                {p.address && (
+                  <p className="truncate text-xs text-muted-foreground">{p.address}</p>
+                )}
               </div>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-muted-foreground">
                 <MapPin className="h-3 w-3" />
+                {p.distance_km < 1
+                  ? `${Math.round(p.distance_km * 1000)} m`
+                  : `${p.distance_km} km`}
               </span>
             </div>
           ))}
