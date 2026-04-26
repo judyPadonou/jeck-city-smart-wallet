@@ -172,7 +172,7 @@ const MapPage = () => {
           {loading ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 bg-muted">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground">Recherche dans un rayon de 30 km…</p>
+              <p className="text-xs text-muted-foreground">Recherche dans un rayon de 7 km…</p>
             </div>
           ) : (
             <MapContainer
