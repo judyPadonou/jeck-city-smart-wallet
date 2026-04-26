@@ -1,5 +1,9 @@
 // Edge Function: fetch-nearby-places
 // Returns merchants/places within a given radius (km) around lat/lng using Overpass API (OpenStreetMap).
+// Persists OSM results into the public.merchants table (source='osm') so they're treated
+// exactly like Pro merchants by the rest of the system (offers, payone flow, etc.).
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
