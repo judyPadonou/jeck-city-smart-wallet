@@ -102,12 +102,88 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { place_id, name, category, lat, lng } = body ?? {};
-    if (!place_id || !name || !category || !isValidCoord(lat) || !isValidCoord(lng)) {
+    const { merchant_id, place_id, name, category, lat, lng } = body ?? {};
+    if (!name || !category || !isValidCoord(lat) || !isValidCoord(lng) || (!merchant_id && !place_id)) {
       return new Response(
-        JSON.stringify({ error: "place_id, name, category, lat, lng required" }),
+        JSON.stringify({ error: "merchant_id (or place_id), name, category, lat, lng required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Resolve merchant UUID — accept either a real UUID or legacy "osm-XXXX" via osm_id lookup
+    const isUuid = (s: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
+    let resolvedMerchantId: string | null = null;
+    if (merchant_id && isUuid(merchant_id)) {
+      resolvedMerchantId = merchant_id;
+    } else {
+      const lookupKey = (merchant_id ?? place_id) as string;
+      const { data: existing } = await supabase
+        .from("merchants")
+        .select("id")
+        .eq("osm_id", lookupKey)
+        .maybeSingle();
+      if (existing) {
+        resolvedMerchantId = existing.id;
+      } else {
+        // Create the OSM merchant on the fly
+        const { data: created, error: createErr } = await supabase
+          .from("merchants")
+          .insert({
+            osm_id: lookupKey,
+            name,
+            category,
+            lat,
+            lng,
+            source: "osm",
+            owner_id: null,
+          })
+          .select("id")
+          .single();
+        if (createErr) {
+          console.error("create OSM merchant error:", createErr);
+          throw new Error("Impossible d'enregistrer le commerce OSM");
+        }
+        resolvedMerchantId = created.id;
+      }
+    }
+
+    // 2h cache lookup
+    const { data: cached } = await supabase
+      .from("generated_offers")
+      .select("id, title, description, discount, context_used, expires_at")
+      .eq("merchant_id", resolvedMerchantId)
+      .eq("source", "osm")
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (cached) {
+      const ctx = (cached.context_used ?? {}) as Record<string, unknown>;
+      return new Response(JSON.stringify({
+        success: true,
+        suggested: true,
+        cached: true,
+        merchant_id: resolvedMerchantId,
+        offer: {
+          id: cached.id,
+          title: cached.title,
+          description: cached.description,
+          discount: Number(cached.discount),
+          rationale: (ctx.rationale as string) ?? "",
+        },
+        context: ctx,
+        expires_at: cached.expires_at,
+      }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const weather = await fetchWeather(lat, lng);
