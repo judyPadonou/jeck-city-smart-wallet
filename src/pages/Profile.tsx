@@ -1,17 +1,55 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings, ChevronRight, Bell, Shield, Heart, LogOut, Sparkles } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { LanguageSelector } from "@/components/jeck/LanguageSelector";
-import { getWallet } from "@/lib/jeck-data";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
-  const items = getWallet();
-  const totalSaved = items.reduce((s, i) => s + (i.offer.originalPrice - i.offer.price), 0);
   const { t } = useI18n();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const [usedOffers, setUsedOffers] = useState(0);
+  const [totalSaved, setTotalSaved] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loadStats = async () => {
+      const { data } = await supabase
+        .from("generated_offers")
+        .select("discount, status")
+        .eq("accepted_by", user.id)
+        .in("status", ["confirmed", "expired"]);
+
+      const rows = data ?? [];
+      setUsedOffers(rows.length);
+      setTotalSaved(rows.reduce((sum, r) => sum + Number(r.discount ?? 0), 0));
+    };
+
+    loadStats();
+
+    const channel = supabase
+      .channel("profile-offers")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "generated_offers",
+          filter: `accepted_by=eq.${user.id}`,
+        },
+        () => loadStats(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth", { replace: true });
