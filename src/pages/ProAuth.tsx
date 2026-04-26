@@ -52,13 +52,21 @@ const ProAuth = () => {
   useEffect(() => {
     if (loading || !user) return;
 
-    // If the user arrived here with a "claim place" pending while logged in
-    // as a client, sign them out so they can create / log into a Pro account.
+    // Wait until the role has actually been resolved (not the transient null
+    // between sign-in and the user_roles fetch). Without this guard we would
+    // sign the user out the moment they sign in, before their pro role loads.
+    if (role === null) return;
+
+    // If the user arrived here with a "claim place" pending AND is confirmed
+    // to be a client (not a pro), sign them out so they can create / log into
+    // a Pro account. We also check the auth user_metadata as a safety net for
+    // freshly-created pro accounts whose user_roles row may not exist yet.
     const pendingClaim =
       sessionStorage.getItem("jeck:claim-place") ||
       localStorage.getItem("jeck:claim-place-pending");
+    const metaRole = (user.user_metadata as any)?.role;
 
-    if (pendingClaim && role !== "pro") {
+    if (pendingClaim && role === "client" && metaRole !== "pro") {
       supabase.auth.signOut().then(() => {
         toast({
           title: "Connexion Pro requise",
@@ -69,7 +77,7 @@ const ProAuth = () => {
       return;
     }
 
-    navigate(role === "pro" ? "/merchant" : "/", { replace: true });
+    navigate(role === "pro" || metaRole === "pro" ? "/merchant" : "/", { replace: true });
   }, [user, role, loading, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
