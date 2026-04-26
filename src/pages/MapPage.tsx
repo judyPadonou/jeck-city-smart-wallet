@@ -84,7 +84,7 @@ const MapPage = () => {
         try {
           const { data, error: fnError } = await supabase.functions.invoke(
             "fetch-nearby-places",
-            { body: { lat, lng, radiusKm: 30 } },
+            { body: { lat, lng, radiusKm: 7 } },
           );
           if (fnError) throw new Error(fnError.message);
           if (!data?.success) throw new Error(data?.error ?? "Erreur inconnue");
@@ -172,7 +172,7 @@ const MapPage = () => {
           {loading ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 bg-muted">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground">Recherche dans un rayon de 30 km…</p>
+              <p className="text-xs text-muted-foreground">Recherche dans un rayon de 7 km…</p>
             </div>
           ) : (
             <MapContainer
@@ -237,7 +237,7 @@ const MapPage = () => {
         <div className="mt-3 space-y-2 pb-6">
           {places.length === 0 && !loading && !error && (
             <p className="rounded-2xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              Aucun lieu trouvé dans un rayon de 30 km.
+              Aucun lieu trouvé dans un rayon de 7 km.
             </p>
           )}
           {places.map((p) => (
