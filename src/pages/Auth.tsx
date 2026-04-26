@@ -11,7 +11,8 @@ import { toast } from "@/hooks/use-toast";
 const schema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(6).max(72),
-  displayName: z.string().trim().min(1).max(80).optional(),
+  firstName: z.string().trim().min(1, "Prénom requis").max(40).optional(),
+  lastName: z.string().trim().min(1, "Nom requis").max(40).optional(),
 });
 
 const Auth = () => {
