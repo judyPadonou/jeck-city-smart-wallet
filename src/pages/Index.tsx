@@ -24,6 +24,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SimResult | null>(null);
   const [accepting, setAccepting] = useState(false);
@@ -43,6 +44,36 @@ const Index = () => {
       { timeout: 6000 },
     );
   }, []);
+
+  // Reverse geocoding via Nominatim (OpenStreetMap) — converts coords → readable address
+  useEffect(() => {
+    if (!coords) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}&zoom=18&addressdetails=1&accept-language=fr`,
+          { signal: controller.signal, headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+        const data = await res.json();
+        const a = data?.address ?? {};
+        const street = [a.house_number, a.road].filter(Boolean).join(" ");
+        const city = a.city || a.town || a.village || a.municipality || "";
+        const postcode = a.postcode || "";
+        const cityPart = [postcode, city].filter(Boolean).join(" ");
+        const formatted = [street, cityPart].filter(Boolean).join(", ") || data?.display_name || null;
+        if (!cancelled) setAddress(formatted);
+      } catch {
+        if (!cancelled) setAddress(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [coords]);
 
   const runMia = useCallback(async (auto = false) => {
     if (!coords) return;
@@ -134,7 +165,7 @@ const Index = () => {
         <div className="mb-3 flex items-center justify-between gap-2">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
             <MapPin className="h-3 w-3" />
-            {coords ? `${coords.lat.toFixed(3)}, ${coords.lng.toFixed(3)}` : "Localisation…"}
+            {address ?? (coords ? "Recherche de l'adresse…" : "Localisation…")}
           </p>
           <button
             onClick={() => setAutoEnabled((v) => !v)}
