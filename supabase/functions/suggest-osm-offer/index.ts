@@ -40,6 +40,40 @@ async function fetchWeather(lat: number, lng: number) {
   }
 }
 
+// Inline lightweight Payone-flow simulator for OSM places (no merchant in DB).
+// Uses a category baseline pattern to estimate hourly transaction weight,
+// then derives whether the current hour is "off-peak".
+const CATEGORY_PATTERNS: Record<string, number[]> = {
+  Restaurant:  [0,0,0,0,0,0, 1,2,3,5, 9,18,22,15, 6,4,3,5, 12,20,18,10, 4,1],
+  Café:        [0,0,0,0,0,1, 4,12,18,15, 10,8,9,7, 12,10,6,4, 3,2,1,1, 0,0],
+  Boulangerie: [0,0,0,0,0,2, 12,22,20,12, 8,14,16,8, 4,3,5,8, 6,3,1,0, 0,0],
+  Bar:         [0,0,0,0,0,0, 0,0,0,0, 1,3,5,3, 2,3,5,9, 14,20,22,18, 12,5],
+  "Fast-food": [0,0,0,0,0,0, 1,2,3,4, 8,18,20,12, 4,3,4,6, 10,15,14,9, 5,2],
+  Boutique:    [0,0,0,0,0,0, 1,2,4,8, 12,14,10,8, 12,14,12,10, 7,4,2,1, 0,0],
+};
+
+function simulatePayoneFlow(category: string) {
+  const key = Object.keys(CATEGORY_PATTERNS).find(
+    (k) => k.toLowerCase() === (category ?? "").toLowerCase(),
+  );
+  const pattern = CATEGORY_PATTERNS[key ?? ""] ?? [0,0,0,0,0,1, 2,4,6,8, 10,12,14,10, 8,10,12,10, 8,6,4,3, 2,1];
+  const counts = pattern.map((w) => Math.max(0, Math.round(w * (1 + (Math.random() * 0.5 - 0.25)))));
+  const sorted = [...counts].sort((a, b) => a - b);
+  const threshold = sorted[Math.max(0, Math.floor(sorted.length / 3) - 1)];
+  const offPeakHours = counts
+    .map((c, h) => ({ c, h }))
+    .filter((x) => x.c <= threshold)
+    .map((x) => x.h);
+  const currentHour = new Date().getHours();
+  return {
+    current_hour: currentHour,
+    current_count: counts[currentHour],
+    is_currently_off_peak: counts[currentHour] <= threshold,
+    off_peak_hours: offPeakHours,
+    hourly_counts: counts,
+  };
+}
+
 function timeContext(): { hour: number; period: string } {
   const h = new Date().getHours();
   let period = "journée";
@@ -75,6 +109,7 @@ Deno.serve(async (req) => {
 
     const weather = await fetchWeather(lat, lng);
     const time = timeContext();
+    const payoneFlow = simulatePayoneFlow(category);
 
     const systemPrompt = `Tu es un marketeur local français spécialisé dans le commerce de proximité.
 Génère UNE offre promotionnelle suggérée, plausible et contextuelle pour un commerce.
@@ -82,6 +117,7 @@ Règles strictes :
 - Ton chaleureux, local, naturel.
 - Adapte l'offre à la météo (pluie/froid → boisson chaude, abri ; chaleur → boisson fraîche, glace ; soleil → terrasse/à emporter).
 - Adapte au moment de la journée (matin → café/viennoiserie ; midi → formule déjeuner ; soir → apéro ; etc.).
+- **Flux Payone (très important)** : si l'heure actuelle est une heure creuse (is_currently_off_peak=true), pousse une remise plus agressive (jusqu'à 25%) avec un ton "happy hour / heure creuse". Sinon reste sur 5-15%.
 - La remise doit être réaliste (5%-25%).
 - Titre < 60 caractères, description 1-2 phrases (< 200 caractères).
 - Réponds UNIQUEMENT en français.
@@ -94,8 +130,9 @@ Règles strictes :
 Contexte actuel :
 - Heure : ${time.hour}h (${time.period})
 - Météo : ${weather ? `${weather.temp}°C, ${weather.condition}` : "non disponible"}
+- Flux Payone (24h simulé) : ${JSON.stringify(payoneFlow)}
 
-Génère l'offre la plus pertinente possible MAINTENANT.`;
+Génère l'offre la plus pertinente possible MAINTENANT, en exploitant l'info d'heure creuse si applicable.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -164,7 +201,7 @@ Génère l'offre la plus pertinente possible MAINTENANT.`;
         discount: safeDiscount,
         rationale: offer.rationale,
       },
-      context: { weather, time },
+      context: { weather, time, payone_flow: payoneFlow },
     }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

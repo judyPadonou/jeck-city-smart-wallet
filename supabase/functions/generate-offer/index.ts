@@ -92,15 +92,57 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 2b) Load Payone transaction flow (last 24h) for this merchant.
+    // If no rows exist for today, trigger a simulation then re-fetch.
+    const today = new Date().toISOString().slice(0, 10);
+    let { data: flowRows } = await supabase
+      .from("payone_transaction_flow")
+      .select("hour_slot, transaction_count, total_amount, avg_basket, is_off_peak")
+      .eq("merchant_id", merchant.id)
+      .eq("recorded_for", today)
+      .order("hour_slot", { ascending: true });
+
+    if (!flowRows || flowRows.length === 0) {
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/simulate-payone-flow`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": authHeader },
+          body: JSON.stringify({ merchant_id: merchant.id }),
+        });
+        const { data: refreshed } = await supabase
+          .from("payone_transaction_flow")
+          .select("hour_slot, transaction_count, total_amount, avg_basket, is_off_peak")
+          .eq("merchant_id", merchant.id)
+          .eq("recorded_for", today)
+          .order("hour_slot", { ascending: true });
+        flowRows = refreshed ?? [];
+      } catch (e) {
+        console.warn("simulate-payone-flow failed:", e);
+      }
+    }
+
+    const currentHour = new Date().getHours();
+    const currentSlot = flowRows?.find((r: any) => r.hour_slot === currentHour) ?? null;
+    const offPeakHours = (flowRows ?? []).filter((r: any) => r.is_off_peak).map((r: any) => r.hour_slot);
+    const isCurrentlyOffPeak = !!currentSlot?.is_off_peak;
+    const payoneFlow = {
+      current_hour: currentHour,
+      current_slot: currentSlot,
+      is_currently_off_peak: isCurrentlyOffPeak,
+      off_peak_hours: offPeakHours,
+      hourly: flowRows ?? [],
+    };
+
     // 3) Build prompt + call Lovable AI Gateway with structured tool-calling
     const rules = (merchant.rules ?? {}) as { discount?: number; goals?: string[]; auto?: boolean };
 
     const systemPrompt = `Tu es un marketeur local expert, spécialisé dans le marketing contextuel pour petits commerces.
-Ta mission : générer UNE offre promotionnelle courte, crédible, immédiatement actionnable, qui répond au contexte météo et au quartier.
+Ta mission : générer UNE offre promotionnelle courte, crédible, immédiatement actionnable, qui répond au contexte météo, au quartier ET au flux de transactions Payone.
 Règles:
 - Le ton doit être chaleureux, local, naturel (pas de jargon marketing).
 - L'offre doit s'appuyer sur la météo: pluie/froid -> abri + boisson chaude; chaleur -> boisson fraîche, terrasse; soleil -> à emporter, terrasse...
 - Tiens compte de la catégorie du commerce et des concurrents proches pour te différencier.
+- **Flux Payone (TRÈS IMPORTANT)** : si l'heure actuelle est une "heure creuse" (is_currently_off_peak=true ou très peu de transactions), pousse une remise nettement plus agressive (jusqu'au max autorisé) et formule l'offre comme un coup de boost ("Heure creuse", "Happy hour", "Boost de fin d'après-midi", etc.). Si on est en pleine heure de pointe, reste sur une remise modérée pour ne pas sacrifier de marge.
 - La remise doit rester dans une fourchette raisonnable (5%-${rules.discount ?? 30}%).
 - Le titre doit faire moins de 60 caractères.
 - La description doit faire 1 à 2 phrases (max 220 caractères).
@@ -115,7 +157,10 @@ Règles:
 Contexte météo / lieu (JSON):
 ${JSON.stringify(context ?? { note: "Pas de coordonnées disponibles" }, null, 2)}
 
-Génère maintenant l'offre la plus pertinente possible pour MAINTENANT.`;
+Flux de transactions Payone (24h, JSON):
+${JSON.stringify(payoneFlow, null, 2)}
+
+Génère maintenant l'offre la plus pertinente possible pour MAINTENANT, en exploitant explicitement l'information d'heure creuse si applicable.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -193,6 +238,7 @@ Génère maintenant l'offre la plus pertinente possible pour MAINTENANT.`;
         context_used: {
           weather: context?.weather ?? null,
           places: context?.places ?? null,
+          payone_flow: payoneFlow,
           rationale: offer.rationale,
           rules_snapshot: rules,
           generated_at: new Date().toISOString(),
