@@ -22,9 +22,32 @@ const ProAuth = () => {
   const [businessName, setBusinessName] = useState("");
   const [businessCategory, setBusinessCategory] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [claimedPlace, setClaimedPlace] = useState<{
+    name: string;
+    category: string;
+    lat?: number;
+    lng?: number;
+    address?: string | null;
+  } | null>(null);
   const navigate = useNavigate();
   const { user, role, loading } = useAuth();
   const { t } = useI18n();
+
+  // Pre-fill from a "claim place" flow coming from the Map
+  useEffect(() => {
+    const raw = sessionStorage.getItem("jeck:claim-place");
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+        setClaimedPlace(p);
+        setBusinessName(p.name ?? "");
+        setBusinessCategory(p.category ?? "");
+        setMode("signup");
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -61,6 +84,11 @@ const ProAuth = () => {
           },
         });
         if (error) throw error;
+        // Persist claim coords so the merchant page can create the merchant entry
+        if (claimedPlace) {
+          sessionStorage.setItem("jeck:claim-place-pending", JSON.stringify(claimedPlace));
+          sessionStorage.removeItem("jeck:claim-place");
+        }
         toast({ title: t("auth.proWelcome") });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -100,6 +128,21 @@ const ProAuth = () => {
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "signin" ? t("auth.proSigninSubtitle") : t("auth.proSignupSubtitle")}
         </p>
+
+        {claimedPlace && mode === "signup" && (
+          <div className="mt-4 rounded-2xl border-2 border-dashed border-accent/40 bg-accent/5 p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-accent">
+              ✨ Réclamation de fiche
+            </p>
+            <p className="mt-1 text-sm font-bold">{claimedPlace.name}</p>
+            {claimedPlace.address && (
+              <p className="text-xs text-muted-foreground">{claimedPlace.address}</p>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Créez votre compte pour activer vos vraies offres sur ce lieu.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           {mode === "signup" && (
