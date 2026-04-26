@@ -46,6 +46,32 @@ const Index = () => {
     );
   }, []);
 
+  // Load user's first name from profile (with fallbacks to display_name / email)
+  useEffect(() => {
+    if (!user) {
+      setFirstName(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const fn =
+        data?.first_name?.trim() ||
+        data?.display_name?.trim().split(" ")[0] ||
+        user.email?.split("@")[0] ||
+        null;
+      setFirstName(fn);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   // Reverse geocoding via Nominatim (OpenStreetMap) — converts coords → readable address
   useEffect(() => {
     if (!coords) return;
