@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
     const hour = ((localHour % 24) + 24) % 24;
     const mood = moodFromWeather(weatherJson, hour);
 
-    // ------- 3) Pick closest registered merchant
+    // ------- 3) Pick closest registered merchant — OR fall back to closest OSM place
     const adminClient = SUPABASE_SERVICE_ROLE_KEY
       ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
       : supabase;
@@ -155,16 +155,38 @@ Deno.serve(async (req) => {
       .not("lat", "is", null)
       .not("lng", "is", null);
     if (merchantsErr) throw merchantsErr;
-    if (!merchants || merchants.length === 0) {
-      return new Response(JSON.stringify({ error: "Aucun commerce enregistré dans la base." }), {
-        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+
+    let chosen: any;
+    let distance: number;
+    let isOsmFallback = false;
+
+    if (merchants && merchants.length > 0) {
+      const ranked = merchants
+        .map((m) => ({ m, d: distM(lat, lng, m.lat as number, m.lng as number) }))
+        .sort((a, b) => a.d - b.d);
+      chosen = ranked[0].m;
+      distance = Math.round(ranked[0].d);
+    } else {
+      // Fallback : aucun commerce inscrit -> on prend le lieu OSM le plus proche
+      const rankedOsm = osmPlaces
+        .filter((p) => typeof p.lat === "number" && typeof p.lng === "number")
+        .map((p) => ({ p, d: distM(lat, lng, p.lat, p.lng) }))
+        .sort((a, b) => a.d - b.d);
+      if (rankedOsm.length === 0) {
+        return new Response(JSON.stringify({ error: "Aucun commerce trouvé autour de vous." }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const top = rankedOsm[0];
+      chosen = {
+        id: null,
+        name: top.p.name,
+        category: top.p.type ?? "Commerce",
+        rules: {},
+      };
+      distance = Math.round(top.d);
+      isOsmFallback = true;
     }
-    const ranked = merchants
-      .map((m) => ({ m, d: distM(lat, lng, m.lat as number, m.lng as number) }))
-      .sort((a, b) => a.d - b.d);
-    const chosen = ranked[0].m;
-    const distance = Math.round(ranked[0].d);
 
     // ------- 4) AI generates one contextual offer
     const rules = (chosen.rules ?? {}) as { discount?: number; goals?: string[] };
