@@ -74,6 +74,17 @@ function simulatePayoneFlow(category: string) {
   };
 }
 
+function timeContext(): { hour: number; period: string } {
+  const h = new Date().getHours();
+  let period = "journée";
+  if (h >= 6 && h < 11) period = "matin";
+  else if (h >= 11 && h < 14) period = "midi";
+  else if (h >= 14 && h < 18) period = "après-midi";
+  else if (h >= 18 && h < 22) period = "soir";
+  else period = "nuit";
+  return { hour: h, period };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
