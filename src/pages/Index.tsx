@@ -29,6 +29,7 @@ const Index = () => {
   const [accepting, setAccepting] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
+  const [autoEnabled, setAutoEnabled] = useState(true);
 
   // Pre-fetch geolocation once on mount (silent fallback to Paris)
   useEffect(() => {
@@ -43,7 +44,7 @@ const Index = () => {
     );
   }, []);
 
-  const runMia = async () => {
+  const runMia = useCallback(async (auto = false) => {
     if (!coords) return;
     setLoading(true);
     setResult(null);
@@ -54,12 +55,25 @@ const Index = () => {
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error(data?.error ?? "Erreur Mia");
       setResult(data as SimResult);
+      if (auto) {
+        toast({ title: "Mia a détecté un contexte favorable", description: "Une offre vient d'être générée pour vous." });
+      }
     } catch (e) {
       toast({ title: "Mia n'a pas pu générer", description: (e as Error).message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [coords]);
+
+  // Watcher contextuel — déclenche Mia automatiquement quand le score dépasse le seuil
+  const { evaluation } = useContextWatcher({
+    coords,
+    enabled: autoEnabled,
+    intervalMs: 30_000,
+    cooldownMs: 5 * 60_000,
+    threshold: 60,
+    onTrigger: () => runMia(true),
+  });
 
   const acceptOffer = async () => {
     if (!result || !user) return;
