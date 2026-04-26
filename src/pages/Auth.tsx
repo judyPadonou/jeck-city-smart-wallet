@@ -11,14 +11,16 @@ import { toast } from "@/hooks/use-toast";
 const schema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(6).max(72),
-  displayName: z.string().trim().min(1).max(80).optional(),
+  firstName: z.string().trim().min(1, "Prénom requis").max(40).optional(),
+  lastName: z.string().trim().min(1, "Nom requis").max(40).optional(),
 });
 
 const Auth = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { user, role, loading } = useAuth();
@@ -35,7 +37,8 @@ const Auth = () => {
     const parsed = schema.safeParse({
       email,
       password,
-      displayName: mode === "signup" ? displayName : undefined,
+      firstName: mode === "signup" ? firstName : undefined,
+      lastName: mode === "signup" ? lastName : undefined,
     });
     if (!parsed.success) {
       toast({ title: t("auth.invalid"), description: parsed.error.errors[0]?.message, variant: "destructive" });
@@ -49,7 +52,12 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { display_name: displayName, role: "client" },
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              display_name: `${firstName} ${lastName}`.trim(),
+              role: "client",
+            },
           },
         });
         if (error) throw error;
@@ -91,13 +99,22 @@ const Auth = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           {mode === "signup" && (
-            <Field
-              label={t("auth.name")}
-              type="text"
-              value={displayName}
-              onChange={setDisplayName}
-              placeholder="Mia Laurent"
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Prénom"
+                type="text"
+                value={firstName}
+                onChange={setFirstName}
+                placeholder="Mia"
+              />
+              <Field
+                label="Nom"
+                type="text"
+                value={lastName}
+                onChange={setLastName}
+                placeholder="Laurent"
+              />
+            </div>
           )}
           <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="vous@exemple.com" />
           <Field label={t("auth.password")} type="password" value={password} onChange={setPassword} placeholder="••••••••" />

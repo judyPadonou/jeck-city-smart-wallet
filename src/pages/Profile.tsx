@@ -13,9 +13,32 @@ const Profile = () => {
   const navigate = useNavigate();
   const [usedOffers, setUsedOffers] = useState(0);
   const [totalSaved, setTotalSaved] = useState(0);
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
 
   useEffect(() => {
     if (!user) return;
+
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data) {
+        const fn = (data.first_name ?? "").trim();
+        const ln = (data.last_name ?? "").trim();
+        if (fn || ln) {
+          setFirstName(fn);
+          setLastName(ln);
+        } else if (data.display_name) {
+          // Fallback: split display_name into first/last
+          const parts = data.display_name.trim().split(/\s+/);
+          setFirstName(parts[0] ?? "");
+          setLastName(parts.slice(1).join(" "));
+        }
+      }
+    };
 
     const loadStats = async () => {
       const { data } = await supabase
@@ -33,6 +56,7 @@ const Profile = () => {
       );
     };
 
+    loadProfile();
     loadStats();
 
     const channel = supabase
@@ -77,10 +101,12 @@ const Profile = () => {
           <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
           <div className="relative flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 font-display text-2xl font-extrabold backdrop-blur-md">
-              M
+              {(firstName.charAt(0) || user?.email?.charAt(0) || "?").toUpperCase()}
             </div>
             <div>
-              <h2 className="font-display text-xl font-extrabold">Mia Laurent</h2>
+              <h2 className="font-display text-xl font-extrabold">
+                {`${firstName} ${lastName}`.trim() || user?.email?.split("@")[0] || "—"}
+              </h2>
               <p className="text-xs text-white/80">{t("profile.member")}</p>
             </div>
           </div>
