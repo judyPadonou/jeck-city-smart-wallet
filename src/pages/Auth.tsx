@@ -99,13 +99,22 @@ const Auth = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           {mode === "signup" && (
-            <Field
-              label={t("auth.name")}
-              type="text"
-              value={displayName}
-              onChange={setDisplayName}
-              placeholder="Mia Laurent"
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Prénom"
+                type="text"
+                value={firstName}
+                onChange={setFirstName}
+                placeholder="Mia"
+              />
+              <Field
+                label="Nom"
+                type="text"
+                value={lastName}
+                onChange={setLastName}
+                placeholder="Laurent"
+              />
+            </div>
           )}
           <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="vous@exemple.com" />
           <Field label={t("auth.password")} type="password" value={password} onChange={setPassword} placeholder="••••••••" />
