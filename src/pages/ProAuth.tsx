@@ -50,9 +50,26 @@ const ProAuth = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading && user) {
-      navigate(role === "pro" ? "/merchant" : "/", { replace: true });
+    if (loading || !user) return;
+
+    // If the user arrived here with a "claim place" pending while logged in
+    // as a client, sign them out so they can create / log into a Pro account.
+    const pendingClaim =
+      sessionStorage.getItem("jeck:claim-place") ||
+      localStorage.getItem("jeck:claim-place-pending");
+
+    if (pendingClaim && role !== "pro") {
+      supabase.auth.signOut().then(() => {
+        toast({
+          title: "Connexion Pro requise",
+          description:
+            "Vous étiez connecté en tant que client. Connectez-vous ou créez un compte Pro pour réclamer cette fiche.",
+        });
+      });
+      return;
     }
+
+    navigate(role === "pro" ? "/merchant" : "/", { replace: true });
   }, [user, role, loading, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
