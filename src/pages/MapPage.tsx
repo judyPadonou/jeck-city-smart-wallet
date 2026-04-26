@@ -9,7 +9,10 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 interface NearbyPlace {
-  id: string;
+  id: string;            // UUID from public.merchants (or osm-XXXX fallback)
+  osm_id?: string;
+  merchant_id?: string | null;
+  source?: string;
   name: string;
   category: string;
   lat: number;
