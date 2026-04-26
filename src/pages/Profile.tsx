@@ -101,10 +101,12 @@ const Profile = () => {
           <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
           <div className="relative flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 font-display text-2xl font-extrabold backdrop-blur-md">
-              M
+              {(firstName.charAt(0) || user?.email?.charAt(0) || "?").toUpperCase()}
             </div>
             <div>
-              <h2 className="font-display text-xl font-extrabold">Mia Laurent</h2>
+              <h2 className="font-display text-xl font-extrabold">
+                {`${firstName} ${lastName}`.trim() || user?.email?.split("@")[0] || "—"}
+              </h2>
               <p className="text-xs text-white/80">{t("profile.member")}</p>
             </div>
           </div>
