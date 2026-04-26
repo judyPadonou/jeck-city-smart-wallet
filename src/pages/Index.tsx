@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Sparkles, MapPin } from "lucide-react";
+import { Bell, Sparkles, MapPin, Zap } from "lucide-react";
 import { MobileShell } from "@/components/jeck/MobileShell";
 import { MiaWidget, type Mood } from "@/components/jeck/MiaWidget";
 import { QrModal } from "@/components/jeck/QrModal";
+import { WhyNowPanel } from "@/components/jeck/WhyNowPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useContextWatcher } from "@/hooks/useContextWatcher";
 import { toast } from "@/hooks/use-toast";
 
 interface SimResult {
