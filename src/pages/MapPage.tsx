@@ -237,7 +237,7 @@ const MapPage = () => {
         <div className="mt-3 space-y-2 pb-6">
           {places.length === 0 && !loading && !error && (
             <p className="rounded-2xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              Aucun lieu trouvé dans un rayon de 30 km.
+              Aucun lieu trouvé dans un rayon de 7 km.
             </p>
           )}
           {places.map((p) => (
