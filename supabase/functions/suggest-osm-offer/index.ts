@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
 
     const weather = await fetchWeather(lat, lng);
     const time = timeContext();
+    const payoneFlow = simulatePayoneFlow(category);
 
     const systemPrompt = `Tu es un marketeur local français spécialisé dans le commerce de proximité.
 Génère UNE offre promotionnelle suggérée, plausible et contextuelle pour un commerce.
@@ -116,6 +117,7 @@ Règles strictes :
 - Ton chaleureux, local, naturel.
 - Adapte l'offre à la météo (pluie/froid → boisson chaude, abri ; chaleur → boisson fraîche, glace ; soleil → terrasse/à emporter).
 - Adapte au moment de la journée (matin → café/viennoiserie ; midi → formule déjeuner ; soir → apéro ; etc.).
+- **Flux Payone (très important)** : si l'heure actuelle est une heure creuse (is_currently_off_peak=true), pousse une remise plus agressive (jusqu'à 25%) avec un ton "happy hour / heure creuse". Sinon reste sur 5-15%.
 - La remise doit être réaliste (5%-25%).
 - Titre < 60 caractères, description 1-2 phrases (< 200 caractères).
 - Réponds UNIQUEMENT en français.
@@ -128,8 +130,9 @@ Règles strictes :
 Contexte actuel :
 - Heure : ${time.hour}h (${time.period})
 - Météo : ${weather ? `${weather.temp}°C, ${weather.condition}` : "non disponible"}
+- Flux Payone (24h simulé) : ${JSON.stringify(payoneFlow)}
 
-Génère l'offre la plus pertinente possible MAINTENANT.`;
+Génère l'offre la plus pertinente possible MAINTENANT, en exploitant l'info d'heure creuse si applicable.`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
