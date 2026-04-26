@@ -63,6 +63,13 @@ const Index = () => {
     if (!result || !user) return;
     setAccepting(true);
     try {
+      // Expire any previously confirmed offer of this user (only one active QR at a time)
+      await supabase
+        .from("generated_offers")
+        .update({ status: "expired" })
+        .eq("accepted_by", user.id)
+        .eq("status", "confirmed");
+
       const payload = JSON.stringify({
         offer_id: result.offer.id,
         merchant_id: result.offer.merchant_id,
